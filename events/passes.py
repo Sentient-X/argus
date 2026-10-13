@@ -131,6 +131,7 @@ def annotate(footage: Footage, settings: Settings, call: Caller, name_call: Call
 OUTCOMES = ("success", "partial", "failure", "unclear")
 SEVERITIES = ("low", "medium", "high")
 ISSUE_KINDS = ("operator_mistake", "data_issue")
+CONTRIBUTIONS = ("advancing", "wasteful", "idle")
 
 
 def summarize(footage: Footage, settings: Settings, call: Caller, calls: list, events: list[Event]) -> dict:
@@ -141,7 +142,8 @@ def summarize(footage: Footage, settings: Settings, call: Caller, calls: list, e
     ends = [("=== first instant ===", sheet([(0.0, footage.at(0.0))], footage.cameras, 1, png=True)),
             ("=== last instant ===", sheet([(footage.duration_s, footage.at(footage.duration_s))], footage.cameras, 1,
                                           png=True))]
-    listing = "\n".join(f"- {e.start_s:.2f}-{e.end_s:.2f} s: {e.label}" for e in events) or "- none found"
+    listing = "\n".join(f"- [{i}] {e.start_s:.2f}-{e.end_s:.2f} s: {e.label}" for i, e in enumerate(events)) \
+        or "- none found"
     text = prompts.SUMMARY.format(overview_step=1 / OVERVIEW_FPS, events=listing, **_header(settings, footage))
     reply = call(_content(text, overview + ends), "summary")
     _record(calls, "summary", reply, len(overview) + len(ends))
@@ -156,6 +158,7 @@ def summarize(footage: Footage, settings: Settings, call: Caller, calls: list, e
         issues.append({"kind": r["kind"], "category": str(r.get("category") or r["kind"]).strip(),
                        "severity": r.get("severity") if r.get("severity") in SEVERITIES else "medium",
                        "t_s": float(t) if isinstance(t, (int, float)) else None, "note": str(r["note"]).strip()})
+    steps = _steps(doc.get("steps"), len(events))
     scene = doc.get("scene") if isinstance(doc.get("scene"), dict) else {}
     goal = doc.get("goal_reached_at_s")
     return {"task_summary": str(doc["task_summary"]).strip(),
@@ -165,7 +168,23 @@ def summarize(footage: Footage, settings: Settings, call: Caller, calls: list, e
             "scene": {"setting": str(scene.get("setting") or "").strip(),
                       "objects": [{"name": str(o.get("name")), "location": str(o.get("location") or "")}
                                   for o in scene.get("objects") or [] if isinstance(o, dict) and o.get("name")]},
-            "issues": issues}
+            "issues": issues, "steps": steps}
+
+
+def _steps(rows, n: int) -> list[dict]:
+    """Each listed event's task progress at its end (0..1) and its contribution, by the event's number. An event
+    the reply leaves out, or a value outside its range, is None: it was not said, so it is not guessed."""
+    steps = [{"progress": None, "contribution": None} for _ in range(n)]
+    for r in rows if isinstance(rows, list) else []:
+        i = r.get("event") if isinstance(r, dict) else None
+        if not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < n:
+            continue
+        p = r.get("progress")
+        if isinstance(p, (int, float)) and not isinstance(p, bool) and 0.0 <= p <= 1.0:
+            steps[i]["progress"] = float(p)
+        if r.get("contribution") in CONTRIBUTIONS:
+            steps[i]["contribution"] = r["contribution"]
+    return steps
 
 
 def _header(settings: Settings, footage: Footage) -> dict:

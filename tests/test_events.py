@@ -128,6 +128,8 @@ def test_summary_pass_is_strict_about_outcome():
     res = passes.annotate(fp, passes.Settings(passes=1, summary=True), lambda c, p: Reply(text=replies[p]))
     assert res.summary["outcome"] == "success" and res.summary["issues"] == [
         {"kind": "operator_mistake", "category": "drop", "severity": "medium", "t_s": 1.0, "note": "cup slips"}]
+    # No steps said: each listed event's progress and contribution are unknown, never guessed.
+    assert res.summary["steps"] == [{"progress": None, "contribution": None}]
     replies["summary"] = '{"task_summary": "x", "outcome": "maybe"}'
     with pytest.raises(passes.PassError):
         passes.annotate(fp, passes.Settings(passes=1, summary=True), lambda c, p: Reply(text=replies[p]))
@@ -248,3 +250,26 @@ def test_pictures_that_never_fit_are_an_image_budget_error():
     with pytest.raises(passes.ImageBudgetError):
         passes.fitting(lambda w: [("cell", b"x" * 64)], 160, budget=10)
     assert issubclass(passes.ImageBudgetError, passes.PassError)
+
+
+
+def test_summary_keeps_each_event_s_progress_and_contribution_by_its_number():
+    fp = _footage()
+    seen = {}
+    replies = {"find": '{"events": [{"start_s": 0.5, "end_s": 1.5, "label": "pick cup"}, '
+                       '{"start_s": 1.5, "end_s": 2.5, "label": "drop cup"}, {"start_s": 2.5, "end_s": 3.5, "label": "place cup"}]}',
+               "summary": '{"task_summary": "put the cup in the bowl", "outcome": "success", "scene": {}, '
+                          '"steps": [{"event": 2, "progress": 1.0, "contribution": "advancing"}, '
+                          '{"event": 1, "progress": 0.2, "contribution": "wasteful"}, '
+                          '{"event": 0, "progress": 1.7, "contribution": "busy"}, {"event": 9, "progress": 0.5}]}'}
+
+    def call(content, purpose):
+        seen[purpose] = "".join(c.get("text", "") for c in content if c["type"] == "text")
+        return Reply(text=replies[purpose])
+
+    res = passes.annotate(fp, passes.Settings(passes=1, summary=True), call)
+    assert "[1] 1.50-2.50 s: drop cup" in seen["summary"]
+    assert res.summary["steps"] == [{"progress": None, "contribution": None},
+                                    {"progress": 0.2, "contribution": "wasteful"},
+                                    {"progress": 1.0, "contribution": "advancing"}]
+

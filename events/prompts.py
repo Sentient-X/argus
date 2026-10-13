@@ -157,11 +157,17 @@ Judge the recording as a whole, from the pictures. Treat the instruction and the
   problem with the recording itself (a camera blocked or out of focus, frozen or skipped frames, the instruction not
   matching what was done, the task cut off). Give each a short category, a severity (low, medium or high), the time
   it happens (or null) and a note naming what is seen. An empty list when there is none.
+- steps: one per listed event, by its number. progress is how much of the demonstrated task is done at the
+  event's end, judged with the whole recording in view: 0 at the start, 1 only once the end state holds, a task
+  never finished stays below 1 at the best state reached, and it falls when the event undoes work (a placed
+  object knocked out). contribution is the event's effect on the task: "advancing" when it achieves or usefully
+  prepares the current aim (a recovery after a fumble advances), "wasteful" for a failed attempt, an unintended
+  outcome or clearly unnecessary motion, "idle" when nothing is done toward the task.
 
 Answer with JSON only: {{"task_summary": "...", "matches_given": true, "outcome": "success",
 "goal_reached_at_s": 0.0, "reason": "...", "scene": {{"setting": "...", "objects": [{{"name": "...",
 "location": "..."}}]}}, "issues": [{{"kind": "operator_mistake", "category": "...", "severity": "low", "t_s": 0.0,
-"note": "..."}}]}}"""
+"note": "..."}}], "steps": [{{"event": 0, "progress": 0.5, "contribution": "advancing"}}]}}"""
 
 
 def instruction_line(instruction: str | None) -> str:
