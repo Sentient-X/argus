@@ -159,11 +159,14 @@ Judge the recording as a whole, from the pictures. Treat the instruction and the
   matching what was done, the task cut off). Give each a short category, a severity (low, medium or high), the time
   it happens (or null) and a note naming what is seen. An empty list when there is none.
 - steps: one per listed event, by its number. progress is how much of the demonstrated task is done at the
-  event's end, judged with the whole recording in view: 0 at the start, 1 only once the end state holds, a task
-  never finished stays below 1 at the best state reached, and it falls when the event undoes work (a placed
-  object knocked out). contribution is the event's effect on the task: "advancing" when it achieves or usefully
-  prepares the current aim (a recovery after a fumble advances), "wasteful" for a failed attempt, an unintended
-  outcome or clearly unnecessary motion, "idle" when nothing is done toward the task.
+  event's end: the state the objects are in then, judged with the whole recording in view, never the effort
+  spent or the best state reached earlier. 0 at the start, 1 only once the end state holds, and a task never
+  finished stays below 1. It goes down whenever the event undoes work (a folded cloth spread out again, a placed
+  object knocked out), by about the share of the task undone. contribution is the event's effect on the task:
+  "advancing" when it achieves or usefully prepares the current aim (a recovery after a fumble advances),
+  "wasteful" for a failed attempt, an unintended outcome or clearly unnecessary motion, "idle" when nothing is
+  done toward the task. A wasteful or idle event never raises progress: it leaves it where the event before left
+  it, or lowers it when work was undone. An event in which the operator makes a mistake you list is wasteful.
 
 Answer with JSON only: {{"task_summary": "...", "matches_given": true, "outcome": "success",
 "goal_reached_at_s": 0.0, "reason": "...", "scene": {{"setting": "...", "objects": [{{"name": "...",
