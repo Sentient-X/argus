@@ -355,6 +355,7 @@ def refine(footage: Footage, settings: Settings, call: Caller, calls: list, note
             overviews[w] = sheets(footage, footage.times(OVERVIEW_FPS), OVERVIEW_COLS, OVERVIEW_ROWS, cell_w=w)
         return overviews[w]
 
+    n_overview = -(-len(footage.times(OVERVIEW_FPS)) // (OVERVIEW_COLS * OVERVIEW_ROWS))
     b0, size = 0, NAME_BATCH
     while b0 < len(events):
         wave = []  # up to CALL_WORKERS requests, built just before they are asked so their pictures are not all held
@@ -382,9 +383,13 @@ def refine(footage: Footage, settings: Settings, call: Caller, calls: list, note
                 size = max(1, size // 2)  # many cameras: fewer boundaries per request rather than none
                 continue
             b0 += len(batch)
-            text = prompts.REFINE.format(overview_step=1 / OVERVIEW_FPS, window=REFINE_WINDOW_S,
-                                         boundaries="\n".join(lines), **_header(settings, footage))
-            wave.append((ids, _content(text, images), len(images)))
+            head = prompts.REFINE.format(overview_step=1 / OVERVIEW_FPS, window=REFINE_WINDOW_S,
+                                         **_header(settings, footage))
+            ask = prompts.REFINE_BOUNDARIES.format(boundaries="\n".join(lines))
+            # the instructions and the overview lead every request of the episode unchanged, so a provider that
+            # caches prompt prefixes reads them at its cache price once it has seen one
+            content = _content(head, images[:n_overview]) + _content(ask, images[n_overview:])
+            wave.append((ids, content, len(images)))
         replies = _ask_all(call, [(content, "refine") for _ids, content, _n in wave])
         for (ids, _content_, n), reply in zip(wave, replies):
             _record(calls, "refine", reply, n)

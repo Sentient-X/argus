@@ -150,19 +150,36 @@ def test_refine_asks_fewer_boundaries_per_request_when_the_images_do_not_fit(mon
     events = [passes.Event(i * 1.0, i * 1.0 + 0.8, f"e{i}") for i in range(4)]
     asked = []
 
+    def shown(captions):
+        return {b for c in captions if c.startswith("=== close-up for ") for b in c[17:].split(" ===")[0].split(", ")}
+
     def fitting(build, cell_w, budget=passes.IMAGE_BUDGET_BYTES):
         images = build(160)
-        if len({c.split()[3] for c, _ in images if "close-up" in c}) > 2:  # more than two boundaries never fit
+        if len(shown(c for c, _ in images)) > 2:  # more than two boundaries never fit
             raise passes.ImageBudgetError("too big")
         return images
 
     def call(content, purpose):
-        asked.append(len({c["text"].split()[3] for c in content if c["type"] == "text" and c["text"].startswith("=== close-up")}))
+        asked.append(len(shown(c["text"] for c in content if c["type"] == "text")))
         return Reply(text='{"boundaries": []}')
 
     monkeypatch.setattr(passes, "fitting", fitting)
     passes.refine(fp, passes.Settings(), call, [], [], events)
     assert asked == [2, 2, 2, 2]
+
+
+def test_refine_requests_open_with_what_the_episode_shares():
+    fp = _footage(40.0)
+    events = [passes.Event(2.0, 10.0, "a"), passes.Event(10.5, 30.0, "b")]
+    seen = []
+    passes.refine(fp, passes.Settings(), lambda c, p: seen.append(c) or Reply(text='{"boundaries": []}'), [], [], events)
+    (content,) = seen
+    texts = [c["text"] for c in content if c["type"] == "text"]
+    closeups = [t for t in texts if t.startswith("=== close-up")]
+    assert [t.split(" ===")[0][17:] for t in closeups] == ["e0.start", "e0.end", "e1.start", "e1.end"]
+    # the request opens with what every request of the episode shares: instructions, then the overview
+    assert texts[0].startswith("You are checking") and "Boundaries to check" not in texts[0]
+    assert texts[1].startswith("=== sheet") and texts[2].startswith("Boundaries to check")
 
 
 def _four_camera_footage(moving: str, duration=4.0):
@@ -209,7 +226,7 @@ def test_refine_and_name_requests_run_together_and_land_on_their_own_events(monk
     def call(content, purpose):
         if purpose == "find":
             return Reply(text=find)
-        text = next(c["text"] for c in content if c["type"] == "text")
+        text = "\n".join(c["text"] for c in content if c["type"] == "text")
         k = next(k for k in range(4) if f"- e{k}" in text)
         with lock:
             live[0] += 1

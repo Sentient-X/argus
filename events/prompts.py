@@ -73,18 +73,19 @@ You are checking the start and end times of events already found in a recording 
 {cameras}
 {instruction}
 
-First comes an overview of the whole recording, one instant every {overview_step:.0f} s. Then, for each boundary
-below, a close-up sheet at 8 instants per second spanning {window:.1f} s either side of the proposed time. Every tile
-is headed with its time in seconds.
+First comes an overview of the whole recording, one instant every {overview_step:.0f} s. Then come the boundaries to
+check and, for each, a close-up sheet at 8 instants per second spanning {window:.1f} s either side of its proposed
+time. Every tile is headed with its time in seconds.
 
 {convention}
 
+For each boundary give the time it really falls at, to 0.05 s, judged on its close-up. A start is the first instant
+the event's movement begins; an end is the first instant the event is complete. Keep the proposed time when the
+close-up does not show a better one. A boundary may move at most {window:.1f} s."""
+
+REFINE_BOUNDARIES = """\
 Boundaries to check:
 {boundaries}
-
-For each boundary give the time it really falls at, to 0.05 s, judged on the close-up. A start is the first instant
-the event's movement begins; an end is the first instant the event is complete. Keep the proposed time when the
-close-up does not show a better one. A boundary may move at most {window:.1f} s.
 
 Answer with JSON only: {{"boundaries": [{{"id": "e3.start", "t_s": 0.0}}]}} with one entry per boundary listed."""
 
