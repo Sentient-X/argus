@@ -254,3 +254,32 @@ def test_reward_completion_journal_preserves_raw_logprobs_before_parse(tmp_path)
     assert calls == [1]
     assert replay[0].outputs[0].token_ids == [42]
     assert replay[0].outputs[0].logprobs[0][43].logprob == float("-inf")
+
+
+def test_remote_durability_precedes_effect_and_return(tmp_path):
+    from events.flora_journal import GenerationJournal
+    observed = []
+    root = tmp_path / 'generations'
+    def commit():
+        observed.append(('commit', sorted(path.name for path in root.iterdir())))
+    def effect():
+        observed.append(('paid', None))
+        return 'retained'
+    journal = GenerationJournal(root, 'request', commit)
+    assert journal.run({'x': 1}, effect) == 'retained'
+    assert observed == [
+        ('commit', ['000000.intent.json']), ('paid', None),
+        ('commit', ['000000.intent.json', '000000.result.json'])]
+    assert GenerationJournal(root, 'request', commit).run({'x': 1}, effect) == 'retained'
+    assert len(observed) == 3
+
+
+def test_remote_intent_commit_failure_prevents_paid_call(tmp_path):
+    from events.flora_journal import GenerationJournal
+    def commit():
+        raise OSError('remote persistence unavailable')
+    def forbidden():
+        pytest.fail('paid call before durable intent')
+    journal = GenerationJournal(tmp_path / 'generations', 'request', commit)
+    with pytest.raises(OSError, match='persistence'):
+        journal.run({'x': 1}, forbidden)

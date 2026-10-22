@@ -99,6 +99,10 @@ def _snapshot(request: dict, kind: str) -> tuple[Path, dict]:
     root = Path(snapshot_download(
         repo_id=spec["repo"],
         revision=spec["revision"],
+        # Upstream resolves __file__ to find adjacent JSON/vendor files. Hub
+        # snapshots contain symlinks into blobs/, so materialize this tiny runtime.
+        local_dir=Path(os.environ.get("FLORA_RUNTIME_CACHE", Path.home() / ".cache" / "argus-flora"))
+                  / kind / spec["revision"],
         allow_patterns=["batch_utils/*", "README.md", "LICENSE.pdf",
                         "MODEL_PROVENANCE.json", "PROVENANCE.json"],
     ))
@@ -110,12 +114,26 @@ def _snapshot(request: dict, kind: str) -> tuple[Path, dict]:
 
 
 def _write_json(path: Path, value: dict) -> None:
+    encoded = json.dumps(value, ensure_ascii=False, allow_nan=False) + "\n"
     # Exclusive creation protects paid results from accidental replacement.
     with path.open("x") as stream:
-        json.dump(value, stream, ensure_ascii=False, allow_nan=False)
-        stream.write("\n")
+        stream.write(encoded)
         stream.flush()
         os.fsync(stream.fileno())
+
+
+def _caption_load_audit(audit: dict) -> dict:
+    """Represent native loading-info key sets without coercing other audit values."""
+    saved = dict(audit)
+    if "captioner" in saved and "loading_info" in saved["captioner"]:
+        report = dict(saved["captioner"])
+        loading = dict(report["loading_info"])
+        for field in ("missing_keys", "unexpected_keys", "mismatched_keys", "error_msgs"):
+            if isinstance(loading.get(field), set):
+                loading[field] = sorted(loading[field])
+        report["loading_info"] = loading
+        saved["captioner"] = report
+    return saved
 
 
 def _caption(request: dict, output: Path, journal: GenerationJournal) -> None:
@@ -179,7 +197,7 @@ def _caption(request: dict, output: Path, journal: GenerationJournal) -> None:
             "model_revisions": {"captioner": native},
             "code_revision": spec["revision"],
             "pipeline": {"caption_inputs": audit},
-            "model_load_audit": session.audit,
+            "model_load_audit": _caption_load_audit(session.audit),
         })
     finally:
         session.close()

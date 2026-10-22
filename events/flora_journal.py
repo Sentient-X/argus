@@ -62,8 +62,9 @@ def _save(path: Path, value) -> None:
 
 
 class GenerationJournal:
-    def __init__(self, root: Path, request_sha256: str):
+    def __init__(self, root: Path, request_sha256: str, durable_commit=lambda: None):
         self.root, self.request_sha256, self.index = root, request_sha256, 0
+        self.durable_commit = durable_commit
         root.mkdir(parents=True, exist_ok=True)
         _sync_directory(root.parent)
 
@@ -85,6 +86,8 @@ class GenerationJournal:
         if result.exists():
             raise RuntimeError(f"Generation {index} result has no intent")
         _save(intent, binding)
+        self.durable_commit()
         value = effect()
         _save(result, {"binding": binding, "value": encode(value)})
+        self.durable_commit()
         return value

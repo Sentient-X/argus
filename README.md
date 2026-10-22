@@ -70,12 +70,14 @@ Resume preserves the original settings, input verification and evidence selectio
 
 `python -m events.flora` applies NVIDIA's pinned Flora Captioner to existing Argus event
 intervals and retains Flora Rewarder outcome and dense action-quality scores. Preparation
-validates native videos offline; execution uses explicit GPU Python environments and retains
-raw results for recovery. See [setup, commands and evidence limits](docs/flora-adoption.md).
+validates native videos offline; hosted execution uses authenticated Modal H200 jobs with
+vLLM continuous batching and retained raw results for recovery. Native GPU execution remains
+available as a reference. See [setup, commands and evidence limits](docs/flora-adoption.md).
 
 Flora code and weights are restricted to noncommercial research/evaluation. This optional
-research path does not change the default annotator or production QC. Model inference and
-quality on Argus data still require GPU qualification.
+research path does not change the default annotator or production QC. Caption and reward
+inference passed a three-episode Modal GPU qualification; model quality remains unqualified.
+See the [measured results and comparisons](docs/flora-qualification-2026-10-22.md).
 
 ## Results and further use
 
