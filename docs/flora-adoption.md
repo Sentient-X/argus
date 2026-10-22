@@ -31,7 +31,7 @@ requires separately established rights. A research acknowledgement does not itse
 | One imperative caption | Event label | Refines; output a research label without inventing skill/body-part metadata |
 | Outcome score 1–5 | Episode outcome judgment | Distinct; retain numeric reward, never translate it to QC success |
 | Dense score 1–3 | Time-ranged quality evidence | Missing; retain retrospective spans and raw clips |
-| TempSeg | Argus find/refine | Omit; existing Argus intervals are the input |
+| TempSeg | Argus find/refine | Separate native research baseline; preserve unlabeled overlapping intervals for matched evaluation |
 | Rubric reward | No requested consumer | Omit from this bounded integration |
 
 Identity binds input video bytes, interval bytes, task, camera order, profile, model revisions and
@@ -101,8 +101,9 @@ For permitted noncommercial research, repeat the preparation command with:
 
 The captioner code revision binds weight revision
 `fef0bbfe11829ca7f3539d58da7a6a2c2f109dc6`, as declared by its released `models.json`.
-The worker verifies that binding and retains its manifest/load audit. TempSeg and its base
-model are not executed. Outcome and dense rewards use the pinned Rewarder weight revision.
+The worker verifies that binding and retains its manifest/load audit. The optional
+`segment-native` stage executes TempSeg and its pinned Qwen3.5-9B base independently.
+Outcome and dense rewards use the pinned Rewarder weight revision.
 
 `request.json` binds the inputs, task, profiles, model pins and adapter code. Each stage journals individual model generations before native parsing, then writes
 its raw JSON and log before Argus validates the stage. A receipt binds completed output bytes to
@@ -123,7 +124,7 @@ qualification path below adds bounded allocation and retained list-price estimat
 
 ## Qualification evidence
 
-The full offline Argus suite passed **2,393 tests**, with one optional Torch-dependent
+The initial full offline Argus suite passed **2,393 tests**, with one optional Torch-dependent
 hand-pose test skipped. The live qualification uses three fixed WGO development episodes:
 `robointer_droid_000013`, `galaxea_049`, and `homer_33`. Actual Argus find/refine produced
 one, one, and six intervals respectively; gold windows were not passed to Flora. Source
@@ -143,6 +144,11 @@ GPU measurements and the final qualification verdict are recorded in the
 [qualification report](flora-qualification-2026-10-22.md). Functional validity and throughput do not establish caption accuracy,
 reward calibration, failure recall, production rights, or qualified robot behavior.
 
+The follow-up [quality pilot](flora-quality-2026-10-22.md) adds matched Astra/Sol and native
+TempSeg comparisons, resident caption serving and independent outcome-reward labels. The
+current offline suite passes **2,460 tests**, with two optional Torch-dependent tests skipped;
+the native TempSeg CPU tests were also exercised separately with Torch installed.
+
 ## Modal hosting and inference optimization
 
 `events/flora_modal.py` defines the authenticated `argus-flora-research` Modal app. Its
@@ -150,6 +156,9 @@ model-cache and evidence volumes survive containers. CPU prefetch downloads pinn
 code and weights before GPU allocation. H200 jobs scale to zero, permit one container, have
 no automatic retries, a 600-second startup timeout and a 1,800-second execution timeout.
 The child worker has a 1,650-second deadline. CPU and memory have explicit hard limits.
+CPU admission has a separate 1,200-second deadline: the 24-interval Sol pilot needed
+545 seconds before GPU dispatch. These CPU verification costs are measured separately
+from model generation and remain part of end-to-end throughput and economics.
 
 The local entrypoint reserves $4 before each allocation in `modal-budget.jsonl` beside the
 manifest, with a $24 campaign ceiling. Completed receipts release only the conservative unused
@@ -165,10 +174,19 @@ uvx --from modal==1.5.2 modal run events/flora_modal.py --manifest data/flora/qu
 uvx --from modal==1.5.2 modal deploy events/flora_modal.py
 # Invoke the deployed functions, with the same budget and evidence checks:
 uvx --from modal==1.5.2 modal run events/flora_modal.py --deployed --admit-only --manifest data/flora/qualification/caption.json
-uvx --from modal==1.5.2 modal run events/flora_modal.py --deployed --manifest data/flora/qualification/caption.json --prepared-cache data/flora/qualification/caption.admission.json
+uvx --from modal==1.5.2 modal run events/flora_modal.py --deployed --submit-only --manifest data/flora/qualification/caption.json --prepared-cache data/flora/qualification/caption.admission.json
+uvx --from modal==1.5.2 modal run events/flora_modal.py --collect-only --manifest data/flora/qualification/caption.json
 ```
 
-A manifest supplies `run_id`, `stage` (`caption`, `caption-native`, `reward`, or `reward-dense`),
+Deployed submission uses Modal's durable `spawn` and saves the function-call ID before
+returning. Collection retrieves that same call and resumes interrupted evidence downloads;
+it does not start inference or reserve another allocation. Keep the dispatch file with its
+manifest. A submission with an uncertain outcome remains reserved until its remote evidence
+is reconciled. This matters when the local connection drops: synchronous driver calls can
+be canceled even though paid generations have already been retained.
+
+A manifest supplies `run_id`, `stage` (`caption`, `caption-session`, `caption-native`,
+`segment-native`, `reward`, `reward-dense`, or `reward-outcome`),
 `use: "noncommercial_research"`, `max_num_seqs` (1, 2, 4, 8, or 16), and `requests`, a list
 of prepared request objects. Give each episode a unique `id`. The CLI verifies and uploads
 native video bytes, records every Flora implementation hash, and maps paths into the mounted
@@ -176,14 +194,39 @@ evidence volume. The remote function verifies those hashes before model work. Th
 caption reference accepts one episode per isolated process; the optimized paths accept a batch.
 The authenticated function requires submitted implementation hashes; use the supplied entrypoint.
 `reward-dense` completes only dense work when a prior terminal result was already retained.
+`reward-outcome` accepts up to 64 episodes and runs only the terminal 1–5 rubric. Set
+`reward_rationale: false` for the released score-only mode; the default remains rationale
+mode. This choice is bound into the generation evidence and cannot change on replay.
 The deployed app is `argus-flora-research` in Modal workspace `sentient-x`; deployment itself
 is distinct from a successful inference receipt.
+
+`caption-session` supplies 1..8 `batches`, each with 1..16 requests, and a top-level
+`requests` list equal to their ordered concatenation. CPU admission prepares every batch
+before GPU dispatch. One bounded worker retains its verified engine and processor across
+the backlog; vLLM continuously schedules intervals within each batch. Identical caption
+inputs across batches are refused. Each batch has its own durable journal and output folder.
+`--prepared-cache` accepts the list of CPU descriptors returned by session admission.
+
+`segment-native` requests include `tempseg_models` from `events.flora_segment.TEMPSEG_MODELS`.
+Prefetch those artifacts with `--prefetch-only --segmenter-only`. This is the released
+Transformers reference, capped at 64 generations and the same worker deadline. It keeps
+one verified TempSeg model across episodes, preserves overlaps and stitching provenance,
+and does not feed unlabeled intervals through Argus's label-dependent refinement.
+An interrupted native run can continue under a new run ID with an explicit `segment_replay`
+descriptor naming the prior manifest and hashes of each settled generation intent/result.
+Replay requires identical source/model bindings and exact prepared generation inputs. It
+retains the reused output in the new journal before decoding; missing windows alone perform
+new inference. An unsettled generation remains a refusal, not permission to retry.
+See the [quality-first comparison protocol](flora-quality-plan.md) for candidate selection
+and the limits on SOTA, parity and cost claims.
 
 CPU admission retains native frame/prompt inputs as hashed JSON and NumPy arrays (`allow_pickle=False`).
 It runs the real vLLM processor and checks its expanded token IDs, pixels and grids before GPU
 allocation. A later batch with identical requests and implementation may reuse that admitted
 cache using `--prepared-cache`; changed arrays, model manifests, model-file sizes/timestamps or
-requests are refused. This avoids repeating native frame preparation on a rented GPU. Checkpoint content SHA-256
+requests are refused. CPU reuse checks the retained parity certificate and processor binding
+without rereading every weight shard; the first GPU engine load still hashes all checkpoint
+contents before loading. Subsequent batches reuse that verified engine. This avoids repeating native frame preparation on a rented GPU. Checkpoint content SHA-256
 verification remains required before loading: file timestamps alone do not establish weight
 identity. The GPU worker also verifies the exact saved FP32 GDN values.
 
@@ -202,7 +245,11 @@ The rewarder reuses one vLLM engine for terminal and dense rewards. Terminal req
 across episodes; the adapter also pools dense windows across episodes, while retaining native
 frame indices, prompts, constrained decoding, parsing and stitching. NVIDIA's released dense
 CLI only batches windows within an episode. Generation receipts commit to the Modal volume
-before parsing, and intent commits precede inference. Returned tokens and log probabilities
+before parsing, and intent commits precede inference. Native reward frame selection is exercised
+on CPU before GPU admission. The released probe counts encoded packets, which can exceed
+decoded frames; the adapter substitutes the verified decoded count and duration while preserving
+frame bytes, native indices and the sampling formula. Real timestamp gaps remain unsupported.
+The packet and decoded counts are retained in `media-preflight.json`. Returned tokens and log probabilities
 remain available when a downstream parser fails. An unsettled generation never retries itself.
 
 Each batch retains model/runtime provenance, raw replies, parsed outputs, timing, token counts,

@@ -106,11 +106,15 @@ def prepare(videos: list[Path], events_path: Path, task: str, profile: str, out:
         raise FloraError("input must be an Argus result with a nonempty events list")
     events = []
     previous = -1.0
+    # Flora's native source clock is rounded to microseconds. Preserve its
+    # terminal boundary (e.g. 395/30 -> 13.166667), without extending to a frame
+    # tolerance or rewriting any interval supplied by the segmenter.
+    final_boundary = max(clocks[0].duration, round(clocks[0].duration, 6))
     for row in rows:
         if not isinstance(row, dict):
             raise FloraError("invalid event")
         start, end = number(row.get("start_s")), number(row.get("end_s"))
-        if not 0 <= start < end <= clocks[0].duration or start < previous:
+        if not 0 <= start < end <= final_boundary or start < previous:
             raise FloraError("events must be ordered, nonempty and within the native video clock")
         events.append({"start_s": start, "end_s": end})
         previous = start

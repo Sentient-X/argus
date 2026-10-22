@@ -5,6 +5,7 @@ using the released frame planning, prompts, constrained decoding and stitching. 
 """
 from __future__ import annotations
 
+from contextlib import contextmanager, ExitStack
 import importlib
 import json
 import math
@@ -20,8 +21,14 @@ from .flora_journal import GenerationJournal, input_digest, _sync_directory
 from .flora_worker import _reward_generate, _snapshot, _write_json
 
 
-def preflight(requests: list[dict]) -> list[dict]:
-    """Verify immutable native media before importing/downloading model code."""
+def preflight(requests: list[dict], *, stage: str | None = None) -> list[dict]:
+    """Verify bytes/clocks; an explicit stage also exercises pinned native decoding.
+
+    Hosted CPU admission must supply its stage. The default retains the lightweight
+    local check without downloading upstream code; it is not GPU admission proof.
+    """
+    if stage is not None and stage not in ("outcome", "dense", "both"):
+        raise flora.FloraError("unknown reward stage")
     if not requests:
         raise flora.FloraError("reward batch requires at least one episode")
     ids = set()
@@ -59,7 +66,68 @@ def preflight(requests: list[dict]) -> list[dict]:
             raise flora.FloraError("reward source clocks differ from the saved request")
         ordered = [paths[1], paths[0], paths[2]] if len(paths) == 3 else paths
         jobs.append({"id": identifier, "task": task, "videos": ordered})
+    if stage is not None:
+        _snapshot(requests[0], "rewarder")
+        core = importlib.import_module("batch_utils.core")
+        with _decoded_video_probe(core, jobs):
+            _native_media_preflight(jobs, requests, core, stage)
     return jobs
+
+
+@contextmanager
+def _decoded_video_probe(core, jobs: list[dict]):
+    """Correct the pinned reader's packet count using fully verified native frames.
+
+    Demux packets need not produce images. Keep upstream geometry and sampling;
+    only the frame clock comes from the existing strict, full-decode admission.
+    """
+    original = core.probe_video
+    verified, audit = {}, []
+    for path in dict.fromkeys(path for job in jobs for path in job["videos"]):
+        clock = flora.video_clock(Path(path))
+        native = original(path)
+        if not math.isclose(native.fps, float(clock.fps), abs_tol=1e-9, rel_tol=0):
+            raise flora.FloraError(f"Native probe disagrees with decoded frame rate: {path}")
+        verified[str(Path(path).resolve())] = core.VideoInfo(
+            native.path, float(clock.fps), clock.frames, native.width, native.height)
+        audit.append({"path": path, "native_packet_count": native.num_frames,
+                      "decoded_frames": clock.frames, "fps": str(clock.fps),
+                      "duration_s": clock.duration, "packet_count_corrected": native.num_frames != clock.frames})
+
+    def probe(path):
+        key = str(Path(path).resolve())
+        if key not in verified:
+            raise flora.FloraError(f"Native reader requested an unadmitted video: {path}")
+        return verified[key]
+
+    core.probe_video = probe
+    try:
+        yield audit
+    finally:
+        core.probe_video = original
+
+
+def _native_media_preflight(jobs: list[dict], requests: list[dict], core, stage: str) -> None:
+    """Read every frame the selected native stage will use, before engine creation."""
+    expected = {request["id"]: request["duration_s"] for request in requests}
+    for job in jobs:
+        collage = core.Collage(job["videos"])
+        try:
+            # Upstream probes nonempty packets, which need not equal decoded frames.
+            # Never let a different native clock relabel a byte-verified episode.
+            if not math.isclose(collage.duration_s, expected[job["id"]], abs_tol=0.001, rel_tol=0):
+                raise flora.FloraError("native packet-derived clock differs from decoded source clock")
+            plans = []
+            if stage in ("outcome", "both"):
+                plans.append(core.terminal_frame_indices(collage.num_frames, collage.fps))
+            if stage in ("dense", "both"):
+                plans.extend(window.frame_indices for window in core.dense_windows(collage.num_frames, collage.fps))
+            for indices in plans:
+                collage.frames(indices)
+        except (ValueError, OSError) as error:
+            raise flora.FloraError(f"Native reward media rejected {job['id']}: {error}") from error
+        finally:
+            collage.release()
 
 
 def read_results(path: Path, stage: str, requests: list[dict]) -> list[dict]:
@@ -214,7 +282,8 @@ def _dense_batch(module, argv) -> int:
 
 
 def run(requests: list[dict], output_dir: Path, journal: GenerationJournal,
-        max_num_seqs: int = 8, *, stage: str = "both") -> dict[str, list[dict]]:
+        max_num_seqs: int = 8, *, stage: str = "both",
+        with_rationale: bool = True) -> dict[str, list[dict]]:
     """Execute native --jobs, retaining JSONL and journaling every paid generation.
 
     A single fresh journal spans terminal then dense calls. Restart with a new
@@ -226,12 +295,15 @@ def run(requests: list[dict], output_dir: Path, journal: GenerationJournal,
         raise flora.FloraError("max_num_seqs must be an integer in 1..64")
     if stage not in ("both", "outcome", "dense"):
         raise flora.FloraError("unknown reward stage")
+    if type(with_rationale) is not bool:
+        raise flora.FloraError("with_rationale must be a boolean")
     if os.environ.get("FLORA_REWARDER_REPO"):
         raise flora.FloraError("Unset FLORA_REWARDER_REPO; requests pin the repository")
     jobs = preflight(requests)
     stages = ("outcome", "dense") if stage == "both" else (stage,)
     binding = {"requests_sha256": input_digest(requests), "max_num_seqs": max_num_seqs,
                "stages": list(stages), "journal_sha256": journal.request_sha256,
+               "with_rationale": with_rationale,
                "adapter_sha256": flora.digest(Path(__file__))}
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -240,6 +312,7 @@ def run(requests: list[dict], output_dir: Path, journal: GenerationJournal,
         guard.mkdir()
     except FileExistsError as error:
         raise flora.FloraError("a worker may still own this reward batch") from error
+    native_scope = ExitStack()
     try:
         saved = output_dir / "batch.json"
         if saved.exists():
@@ -262,16 +335,14 @@ def run(requests: list[dict], output_dir: Path, journal: GenerationJournal,
             raise flora.FloraError("reward batch requires a fresh journal cursor for deterministic replay")
         _, spec = _snapshot(requests[0], "rewarder")
         core = importlib.import_module("batch_utils.core")
-        # Native checks run before the dense CLI can create its GPU engine.
-        for job in jobs:
-            collage = core.Collage(job["videos"])
-            try:
-                if "outcome" in stages:
-                    core.terminal_frame_indices(collage.num_frames, collage.fps)
-                if "dense" in stages:
-                    core.dense_windows(collage.num_frames, collage.fps)
-            finally:
-                collage.release()
+        media_audit = native_scope.enter_context(_decoded_video_probe(core, jobs))
+        _native_media_preflight(jobs, requests, core, stage)
+        media_path = output_dir / "media-preflight.json"
+        if media_path.exists():
+            if json.loads(media_path.read_text()) != media_audit:
+                raise flora.FloraError("Retained native media admission changed")
+        else:
+            _write_json(media_path, media_audit)
         jobs_path = output_dir / "jobs.jsonl"
         encoded_jobs = "".join(json.dumps(job, ensure_ascii=False) + "\n" for job in jobs)
         if jobs_path.exists():
@@ -354,7 +425,7 @@ def run(requests: list[dict], output_dir: Path, journal: GenerationJournal,
             args = ["--model", spec["repo"], "--revision", spec["weights_revision"],
                     "--jobs", str(jobs_path), "--output", str(attempt),
                     "--max-num-seqs", str(max_num_seqs), "--max-model-len", "16384"]
-            if name == "outcome":
+            if name == "outcome" and with_rationale:
                 args.append("--with-rationale")
             try:
                 status = module.main(args) if name == "outcome" else _dense_batch(module, args)
@@ -372,4 +443,5 @@ def run(requests: list[dict], output_dir: Path, journal: GenerationJournal,
                                                  for name in stages}})
         return result
     finally:
+        native_scope.close()
         guard.rmdir()

@@ -19,7 +19,8 @@ ENV = {"HF_HOME": "/models/huggingface", "FLORA_MODEL_CACHE": "/models/flora",
 source = Path(__file__).resolve().parent
 cpu_image = (modal.Image.debian_slim(python_version="3.12")
              .uv_pip_install("huggingface-hub==1.33.0")
-             .env(ENV).add_local_dir(source, "/opt/argus/events"))
+             .env(ENV).add_local_dir(source, "/opt/argus/events")
+             .add_local_dir(source.parent / "label", "/opt/argus/label"))
 gpu_image = (modal.Image.from_registry("nvidia/cuda:12.9.0-devel-ubuntu22.04", add_python="3.12")
              .entrypoint([]).apt_install("ffmpeg", "libgl1", "libglib2.0-0")
              .uv_pip_install("vllm==0.24.0", "transformers==5.8.1", "peft==0.18.1",
@@ -29,8 +30,17 @@ gpu_image = (modal.Image.from_registry("nvidia/cuda:12.9.0-devel-ubuntu22.04", a
 
 @app.function(image=cpu_image, volumes={"/models": cache}, timeout=3600,
               cpu=(4, 4), memory=(16384, 16384), retries=0, max_containers=1, scaledown_window=2)
-def prefetch():
+def prefetch(segmenter_only: bool = False):
     from huggingface_hub import snapshot_download
+    if segmenter_only:
+        from events.flora_segment import TEMPSEG_MODELS
+        paths = {}
+        for kind, spec in TEMPSEG_MODELS.items():
+            options = {"local_dir": "/models/flora/tempseg"} if kind == "tempseg" else {}
+            paths[kind] = snapshot_download(spec["repo"], revision=spec["revision"],
+                allow_patterns=["*.safetensors", "*.json", "*.jinja", "*.txt", "*.model", "*.sha256"], **options)
+        cache.commit()
+        return paths
     models = {
         "captioner": ("nvidia/Flora-Captioner", "f736ca36925ae55d2f7915993ed1bc9f87288bb3",
                       "fef0bbfe11829ca7f3539d58da7a6a2c2f109dc6"),
@@ -50,7 +60,7 @@ def prefetch():
     return result
 
 @app.function(image=gpu_image, cpu=(8, 8), memory=(65536, 65536),
-              volumes={"/models": cache, "/evidence": evidence}, timeout=600,
+              volumes={"/models": cache, "/evidence": evidence}, timeout=1200,
               retries=0, max_containers=1, single_use_containers=True)
 def inspect(manifest: dict):
     """Exercise the actual upstream media/processor contract without renting a GPU."""
@@ -61,23 +71,32 @@ def inspect(manifest: dict):
                       for p in Path(flora_hosted.__file__).parent.glob("flora*.py")}
     if implementation != manifest.get("implementation_sha256"):
         raise ValueError("CPU admission implementation differs from the submitted batch")
-    if manifest["stage"] == "caption":
+    if type(manifest.get("reward_rationale", True)) is not bool:
+        raise ValueError("reward_rationale must be a boolean")
+    if manifest["stage"] in {"caption", "caption-session"}:
         import re
-        from events.flora_vllm import prepare_many_cache, _load_prepared_cache
+        from events.flora_vllm import prepare_many_cache
         run_id = manifest["run_id"]
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}", run_id):
             raise ValueError("Invalid run id")
-        if "prepared_cache" in manifest:
-            result = manifest["prepared_cache"]
-            path = Path(result["path"])
-            if (not path.resolve().is_relative_to(Path("/evidence/prepared").resolve())
-                    or path.name != "cache.json"
-                    or hashlib.sha256(path.read_bytes()).hexdigest() != result["sha256"]):
-                raise ValueError("Retained CPU preparation descriptor changed")
-            _load_prepared_cache(manifest["requests"], path.parent)
-        else:
-            result = prepare_many_cache(manifest["requests"], Path("/evidence/prepared") / run_id)
-            evidence.commit()
+        batches = (flora_hosted.caption_batches(manifest)
+                   if manifest["stage"] == "caption-session" else [manifest])
+        descriptors = []
+        for index, batch in enumerate(batches):
+            if "prepared_cache" in batch:
+                descriptor = batch["prepared_cache"]
+                flora_hosted.verify_prepared_cache(batch["requests"], descriptor)
+            else:
+                name = f"{run_id}-batch-{index:03d}" if len(batches) > 1 else run_id
+                descriptor = prepare_many_cache(batch["requests"], Path("/evidence/prepared") / name)
+                evidence.commit()
+            descriptors.append(descriptor)
+        result = descriptors if manifest["stage"] == "caption-session" else descriptors[0]
+    elif manifest["stage"] == "segment-native":
+        from events.flora_segment import preflight, validate_replay
+        validate_replay(manifest["requests"], manifest.get("segment_replay"),
+                        flora_hosted.segment_replay_root(manifest))
+        result = preflight(manifest["requests"])
     elif manifest["stage"] == "caption-native":
         from events.flora_vllm import prepare
         result = []
@@ -87,7 +106,8 @@ def inspect(manifest: dict):
                            "duration_s": receipt["duration_s"]})
     else:
         from events.flora_reward_batch import preflight
-        result = preflight(manifest["requests"])
+        result = preflight(manifest["requests"], stage={
+            "reward-dense": "dense", "reward-outcome": "outcome"}.get(manifest["stage"], "both"))
     cache.commit()
     return result
 
@@ -106,15 +126,34 @@ def qualify(manifest: dict):
 
 @app.local_entrypoint()
 def main(prefetch_only: bool = False, manifest: str = "", deployed: bool = False,
-         admit_only: bool = False, prepared_cache: str = ""):
+         admit_only: bool = False, prepared_cache: str = "", segmenter_only: bool = False,
+         submit_only: bool = False, collect_only: bool = False):
     import hashlib
     import json
     import os
     if prefetch_only:
-        print(json.dumps(prefetch.remote(), indent=2))
+        print(json.dumps(prefetch.remote(segmenter_only), indent=2))
     elif manifest:
         source_manifest = Path(manifest).resolve()
         request = json.loads(source_manifest.read_text())
+        if collect_only:
+            dispatch = json.loads(source_manifest.with_suffix(".dispatch.json").read_text())
+            if dispatch["run_id"] != request["run_id"]:
+                raise ValueError("Dispatch identity differs from the selected manifest")
+            try:
+                result = modal.FunctionCall.from_id(dispatch["call_id"]).get(timeout=0)
+            except TimeoutError:
+                print("Still running; collect the same call later. No new allocation.", flush=True)
+                return
+            if result["manifest_sha256"] != dispatch["manifest_sha256"]:
+                raise ValueError("Returned result differs from the submitted manifest")
+            _retain_result(source_manifest, result)
+            return
+        if submit_only and (not deployed or admit_only):
+            raise ValueError("Submit-only requires deployed GPU inference")
+        if request["stage"] == "caption-session":
+            from events.flora_hosted import caption_batches
+            caption_batches(request)
         request["implementation_sha256"] = {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
             for path in source.glob("flora*.py")}
@@ -151,14 +190,30 @@ def main(prefetch_only: bool = False, manifest: str = "", deployed: bool = False
                         uploaded.add(target)
                     paths.append("/evidence" + target)
                 episode["videos"] = paths
+        if request["stage"] == "caption-session":
+            # JSON decoding does not preserve aliases between the top-level upload
+            # list and the per-batch requests. Rebind only after ordered equality passed.
+            offset = 0
+            for batch in request["batches"]:
+                count = len(batch["requests"])
+                batch["requests"] = request["requests"][offset:offset + count]
+                offset += count
         admission = modal.Function.from_name(APP_NAME, "inspect") if deployed else inspect
         inference = modal.Function.from_name(APP_NAME, "qualify") if deployed else qualify
         if prepared_cache:
-            request["prepared_cache"] = json.loads(Path(prepared_cache).read_text())
+            retained = json.loads(Path(prepared_cache).read_text())
+            if request["stage"] == "caption-session":
+                for batch, descriptor in zip(request["batches"], retained, strict=True):
+                    batch["prepared_cache"] = descriptor
+            else:
+                request["prepared_cache"] = retained
         admitted = admission.remote(request)
         print("CPU admission:", admitted, flush=True)
         if request["stage"] == "caption":
             request["prepared_cache"] = admitted
+        elif request["stage"] == "caption-session":
+            for batch, descriptor in zip(request["batches"], admitted, strict=True):
+                batch["prepared_cache"] = descriptor
         if admit_only:
             saved = source_manifest.with_suffix(".admission.json")
             with saved.open("x") as stream:
@@ -167,34 +222,23 @@ def main(prefetch_only: bool = False, manifest: str = "", deployed: bool = False
                 os.fsync(stream.fileno())
             print(f"CPU preparation retained: {saved}", flush=True)
             return
-        result = inference.remote(request)
-        saved = source_manifest.with_suffix(".receipt.json")
-        with saved.open("x") as stream:
-            json.dump(result, stream, indent=2)
-            stream.flush()
-            os.fsync(stream.fileno())
-        # Reconcile only after durable completion evidence. Keep the full startup
-        # timeout reserved even when the real cold start was shorter.
-        upper = (result["elapsed_s"] + 605) * (.001261 + 8*.0000131 + 64*.00000222)
-        with ledger.open("a") as stream:
-            fcntl.flock(stream, fcntl.LOCK_EX)
-            stream.write(json.dumps({"run_id": request["run_id"],
-                                     "released_usd": max(0, 4 - upper),
-                                     "completed_upper_cost_usd": upper}) + "\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        artifacts = source_manifest.with_suffix(".artifacts")
-        artifacts.mkdir()
-        for name, expected in result["files"].items():
-            path = artifacts / name
-            if not path.resolve().is_relative_to(artifacts.resolve()):
-                raise ValueError("Invalid retained artifact path")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with path.open("xb") as stream:
-                for chunk in evidence.read_file(f"/runs/{request['run_id']}/{name}"):
-                    stream.write(chunk)
-            if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-                raise ValueError("Downloaded evidence hash differs from the hosted receipt")
-        print(json.dumps(result, indent=2))
+        if deployed:
+            from events.flora_journal import _save, input_digest
+            call = inference.spawn(request)
+            _save(source_manifest.with_suffix(".dispatch.json"), {
+                "run_id": request["run_id"], "call_id": call.object_id,
+                "manifest_sha256": input_digest(request)})
+            print(f"Submitted durable call {call.object_id}; collect with --collect-only.", flush=True)
+            if submit_only:
+                return
+            result = call.get()
+        else:
+            result = inference.remote(request)
+        _retain_result(source_manifest, result)
     else:
         raise ValueError("Pass --prefetch-only or --manifest PATH")
+
+
+def _retain_result(source_manifest: Path, result: dict) -> None:
+    from events.flora_hosted import retain_result
+    retain_result(source_manifest, result, evidence.read_file)

@@ -79,6 +79,29 @@ def test_overlapping_events_preserved(planned):
     assert other["events"] == [{"start_s": 0, "end_s": 3}, {"start_s": 1, "end_s": 4}]
 
 
+def test_native_microsecond_endpoint_preserved_without_frame_tolerance(tmp_path):
+    video = tmp_path / "native.mp4"
+    with av.open(str(video), "w") as container:
+        stream = container.add_stream("mpeg4", rate=30)
+        stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+        for _ in range(395):
+            frame = av.VideoFrame.from_ndarray(np.zeros((48, 64, 3), dtype=np.uint8), format="rgb24")
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        for packet in stream.encode():
+            container.mux(packet)
+    events = tmp_path / "events.json"
+    rows = [{"start_s": 8.0, "end_s": 13.166667}]
+    events.write_text(json.dumps({"events": rows}))
+    request = flora.prepare([video], events, "Pour the cup.", "yam", tmp_path / "accepted")
+    assert request["duration_s"] == 395 / 30
+    assert request["events"] == rows
+    rows[0]["end_s"] = 13.166668
+    events.write_text(json.dumps({"events": rows}))
+    with pytest.raises(flora.FloraError, match="within the native video clock"):
+        flora.prepare([video], events, "Pour the cup.", "yam", tmp_path / "refused")
+
+
 def test_retained_outputs_join_without_launching_models(planned):
     request, out, _, _ = planned
     for stage, raw in outputs(request).items():

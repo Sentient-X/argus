@@ -74,8 +74,11 @@ def preparation_cache(tmp_path, monkeypatch):
         root, SimpleNamespace(tokenizer=object()), prepared,
         {"id": request["id"], "segments": [{"status": "complete"}]},
     ))
-    monkeypatch.setattr(flora_vllm, "check_processor_parity", lambda *args: {
-        "status": "PASS_NATIVE_PROCESSOR_PARITY", "requests": 1, "elapsed_s": 0.0,
+    monkeypatch.setattr(flora_vllm, "_processor_binding", lambda root: {"test_runtime": "pinned"})
+    monkeypatch.setattr(flora_vllm, "check_processor_parity", lambda root, tokenizer, items: {
+        "status": "PASS_NATIVE_PROCESSOR_PARITY", "requests": len(items), "elapsed_s": 0.0,
+        "checked_precisions": ["float32", "bfloat16"],
+        "binding": flora_vllm._parity_binding(root, items),
     })
     directory = tmp_path / "prepared"
     descriptor = flora_vllm.prepare_many_cache(requests, directory)

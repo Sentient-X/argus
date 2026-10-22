@@ -289,12 +289,75 @@ def check_processor_parity(root: Path, tokenizer, prepared: list[dict], model_co
                 }, sort_keys=True))
     return {"status": "PASS_NATIVE_PROCESSOR_PARITY", "requests": len(prepared),
             "checked_precisions": ["float32", "bfloat16"],
+            "binding": _parity_binding(root, prepared),
             "elapsed_s": time.monotonic() - started}
 
 
 def _file_sha(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def _processor_binding(root: Path) -> dict:
+    from importlib.metadata import version
+
+    return {"files": {name: _file_sha(root / name) for name in (
+                "config.json", "processor_config.json", "tokenizer.json",
+                "tokenizer_config.json", "chat_template.jinja")},
+            "versions": {name: version(name) for name in (
+                "vllm", "transformers", "torch", "torchvision", "numpy", "pillow", "tokenizers")},
+            "kwargs": _processor_kwargs(root)}
+
+
+def _parity_binding(root: Path, prepared: list[dict]) -> dict:
+    return {"prepared_sha256": input_digest(prepared),
+            "implementation_sha256": _file_sha(Path(__file__)),
+            "model_manifest_sha256": _file_sha(root / "SOURCE_MANIFEST.sha256"),
+            "processor": _processor_binding(root)}
+
+
+def _validate_parity(certificate: dict, root: Path, prepared: list[dict]) -> None:
+    if (certificate.get("status") != "PASS_NATIVE_PROCESSOR_PARITY"
+            or certificate.get("requests") != len(prepared)
+            or certificate.get("checked_precisions") != ["float32", "bfloat16"]
+            or certificate.get("binding") != _parity_binding(root, prepared)):
+        raise ValueError("CPU processor parity certificate differs from admitted inputs/runtime")
+
+
+def _resident_binding(root: Path, model_spec: dict) -> dict:
+    return {"root": str(root.resolve()), "model": dict(model_spec),
+            "manifest_sha256": _file_sha(root / "SOURCE_MANIFEST.sha256"),
+            "processor": _processor_binding(root),
+            "implementation_sha256": _file_sha(Path(__file__))}
+
+
+class ResidentCaptionSession:
+    """One bounded, serial engine lifetime; the caller owns shutdown and deadline."""
+
+    def __init__(self, max_num_seqs: int = 8, *, max_chunks: int = 16):
+        if not 1 <= max_num_seqs <= 64 or max_chunks < 1:
+            raise ValueError("Invalid resident caption session limits")
+        self.max_num_seqs, self.max_chunks = max_num_seqs, max_chunks
+        self._engine = self._processor = self._binding = None
+        self._chunks = 0
+        self._lock = threading.Lock()
+
+    def _check_binding(self, binding: dict) -> bool:
+        if self._engine is None:
+            return False
+        if self._binding != binding:
+            raise ValueError("Resident caption engine model or processor binding changed")
+        return True
+
+    def _load(self, root: Path, model_spec: dict):
+        binding = _resident_binding(root, model_spec)
+        if not self._check_binding(binding):
+            from transformers import AutoProcessor
+
+            processor = AutoProcessor.from_pretrained(root, local_files_only=True)
+            engine = load_engine(root, self.max_num_seqs)
+            self._processor, self._engine, self._binding = processor, engine, binding
+        return self._engine, self._processor
 
 
 def _model_file_stats(root: Path) -> dict:
@@ -395,7 +458,8 @@ def prepare_many_cache(requests: list[dict], cache_dir: Path) -> dict:
             "intervals": sum(len(episode["prepared"]) for episode in episodes)}
 
 
-def _load_prepared_cache(requests: list[dict], cache_dir: Path) -> list[tuple]:
+def _load_prepared_cache(requests: list[dict], cache_dir: Path, *,
+                         resident: ResidentCaptionSession | None = None) -> list[tuple]:
     import numpy as np
 
     record = json.loads((cache_dir / "cache.json").read_text())
@@ -421,13 +485,20 @@ def _load_prepared_cache(requests: list[dict], cache_dir: Path) -> list[tuple]:
         return [decode(item) for item in value] if isinstance(value, list) else value
 
     episodes, verified_models = [], set()
-    for episode in record["episodes"]:
+    for episode, request in zip(record["episodes"], requests, strict=True):
         root = Path(episode["root"])
         if (not root.is_absolute() or _file_sha(root / "SOURCE_MANIFEST.sha256")
                 != episode["model_manifest_sha256"]):
             raise ValueError("Preparation cache model manifest differs")
         model_binding = (root, input_digest(episode["model_files"]), episode["model_manifest_sha256"])
-        if model_binding not in verified_models:
+        loaded = resident is not None and resident._check_binding(
+            _resident_binding(root, request["models"]["captioner"]))
+        if loaded:
+            # The same engine already contains the SHA-verified weights. Never
+            # skip the content scan before loading/replacing an engine.
+            if _model_file_stats(root) != episode["model_files"]:
+                raise ValueError("Resident checkpoint files changed after loading")
+        elif model_binding not in verified_models:
             _verify_model_files(root, episode["model_files"], episode["model_manifest_sha256"])
             verified_models.add(model_binding)
         elif _model_file_stats(root) != episode["model_files"]:
@@ -435,7 +506,10 @@ def _load_prepared_cache(requests: list[dict], cache_dir: Path) -> list[tuple]:
         prepared = decode(episode["prepared"])
         if input_digest(prepared) != episode["prepared_sha256"]:
             raise ValueError("Preparation cache native inputs differ")
-        episodes.append((root, prepared, decode(episode["receipt"])))
+        _validate_parity(episode["processor_parity"], root, prepared)
+        receipt = decode(episode["receipt"])
+        receipt["processor_admission"] = episode["processor_parity"]
+        episodes.append((root, prepared, receipt))
     return episodes
 
 
@@ -465,7 +539,8 @@ def _decode(completion: dict, tokenizer) -> str:
     return text
 
 
-def _batch(prepared: list[dict], llm, journal: GenerationJournal, max_num_seqs: int):
+def _batch(prepared: list[dict], llm, journal: GenerationJournal, max_num_seqs: int,
+           admitted_groups: list[tuple] | None = None):
     from vllm import SamplingParams
 
     if any(item["max_tokens"] != 512 for item in prepared):
@@ -475,9 +550,17 @@ def _batch(prepared: list[dict], llm, journal: GenerationJournal, max_num_seqs: 
     # Independent CPU processor: no engine cache mutation and no paid generation.
     # Compare actual patches as well as token IDs; equal shapes alone cannot prove
     # matching RGB conversion, normalization, resizing, or temporal patch order.
-    parity = check_processor_parity(Path(llm.model_config.model), llm.get_tokenizer(),
-                                    prepared, model_config=llm.model_config)
-    preflight_wall_s = parity["elapsed_s"]
+    if admitted_groups is None:
+        parity = check_processor_parity(Path(llm.model_config.model), llm.get_tokenizer(),
+                                        prepared, model_config=llm.model_config)
+        preflight_wall_s = parity["elapsed_s"]
+    else:
+        started = time.monotonic()
+        if input_digest([item for group, _ in admitted_groups for item in group]) != input_digest(prepared):
+            raise ValueError("CPU admission groups differ from the inference batch")
+        for group, certificate in admitted_groups:
+            _validate_parity(certificate, Path(llm.model_config.model), group)
+        preflight_wall_s = time.monotonic() - started
 
     def generate():
         started = time.monotonic()
@@ -509,6 +592,7 @@ def _batch(prepared: list[dict], llm, journal: GenerationJournal, max_num_seqs: 
         if completion["prompt_token_ids"] != item["prompt_token_ids"]:
             raise ValueError("vLLM preprocessing differs from the native captioner prompt tokens")
     return saved["completions"], precision, {**saved["metrics"], "generation_replayed": replayed,
+                                           "processor_parity_reused": admitted_groups is not None,
                                            "processor_parity_wall_s": preflight_wall_s}
 
 
@@ -539,8 +623,25 @@ def caption(request: dict, output: Path, journal: GenerationJournal,
 
 
 def caption_many(requests: list[dict], output_dir: Path, journal: GenerationJournal,
-                 max_num_seqs: int = 8, prepared_cache: Path | None = None) -> list[dict]:
+                 max_num_seqs: int = 8, prepared_cache: Path | None = None,
+                 session: ResidentCaptionSession | None = None) -> list[dict]:
     """Batch intervals across episodes while loading the captioner once."""
+    session = session if session is not None else ResidentCaptionSession(max_num_seqs, max_chunks=1)
+    if session.max_num_seqs != max_num_seqs:
+        raise ValueError("Resident caption concurrency differs from the admitted chunk")
+    if not session._lock.acquire(blocking=False):
+        raise ValueError("Resident caption session already has an active chunk")
+    try:
+        if session._chunks >= session.max_chunks:
+            raise ValueError("Resident caption session reached its admitted chunk limit")
+        return _caption_many(requests, output_dir, journal, max_num_seqs, prepared_cache, session)
+    finally:
+        session._lock.release()
+
+
+def _caption_many(requests: list[dict], output_dir: Path, journal: GenerationJournal,
+                  max_num_seqs: int, prepared_cache: Path | None,
+                  session: ResidentCaptionSession) -> list[dict]:
     from .flora_worker import _write_json
 
     if not requests:
@@ -552,26 +653,29 @@ def caption_many(requests: list[dict], output_dir: Path, journal: GenerationJour
     if any(path.exists() for path in paths):
         raise ValueError("Caption outputs already exist; preserve original results")
     started = time.monotonic()
+    reused = session._engine is not None
     if prepared_cache is None:
         episodes = [prepare(request) for request in requests]
+        for root, processor, items, receipt in episodes:
+            receipt["processor_admission"] = check_processor_parity(root, processor.tokenizer, items)
     else:
-        cached = _load_prepared_cache(requests, prepared_cache)
-        from transformers import AutoProcessor
-
-        processors = {root: AutoProcessor.from_pretrained(root, local_files_only=True)
-                      for root in {item[0] for item in cached}}
-        episodes = [(root, processors[root], items, receipt)
-                    for root, items, receipt in cached]
+        cached = _load_prepared_cache(requests, prepared_cache, resident=session)
+        episodes = [(root, None, items, receipt) for root, items, receipt in cached]
     roots = {root.resolve() for root, _, _, _ in episodes}
     if len(roots) != 1:
         raise ValueError("All episodes in one batch must use the same checkpoint")
+    specs = [request["models"]["captioner"] for request in requests]
+    if any(spec != specs[0] for spec in specs):
+        raise ValueError("All episodes in one batch must use the same model binding")
     prepared = [item for _, _, items, _ in episodes for item in items]
     prepared_at = time.monotonic()
-    llm = load_engine(episodes[0][0], max_num_seqs)
+    llm, processor = session._load(episodes[0][0], specs[0])
     loaded_at = time.monotonic()
-    saved, precision, metrics = _batch(prepared, llm, journal, max_num_seqs)
+    session._chunks += 1
+    saved, precision, metrics = _batch(prepared, llm, journal, max_num_seqs,
+        admitted_groups=[(items, receipt["processor_admission"]) for _, _, items, receipt in episodes])
     offset, receipts = 0, []
-    for (_, processor, items, receipt), path in zip(episodes, paths, strict=True):
+    for (_, _, items, receipt), path in zip(episodes, paths, strict=True):
         for row, completion in zip(receipt["segments"], saved[offset:offset + len(items)], strict=True):
             row["caption"] = _decode(completion, processor.tokenizer)
         offset += len(items)
@@ -579,6 +683,7 @@ def caption_many(requests: list[dict], output_dir: Path, journal: GenerationJour
         receipt["generation_batch_size"] = len(prepared)
         receipt["timing"] = {**metrics, "episodes": len(episodes),
                              "prepared_cache_used": prepared_cache is not None,
+                             "resident_engine_reused": reused, "resident_chunk": session._chunks,
                              "prepare_wall_s": prepared_at - started,
                              "engine_load_wall_s": loaded_at - prepared_at,
                              "total_wall_s": time.monotonic() - started}

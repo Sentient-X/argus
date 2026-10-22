@@ -77,7 +77,8 @@ available as a reference. See [setup, commands and evidence limits](docs/flora-a
 Flora code and weights are restricted to noncommercial research/evaluation. This optional
 research path does not change the default annotator or production QC. Caption and reward
 inference passed a three-episode Modal GPU qualification; model quality remains unqualified.
-See the [measured results and comparisons](docs/flora-qualification-2026-10-22.md).
+See the [initial runtime qualification](docs/flora-qualification-2026-10-22.md) and the
+[matched Astra/Sol quality pilot and resident inference results](docs/flora-quality-2026-10-22.md).
 
 ## Results and further use
 

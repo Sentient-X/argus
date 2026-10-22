@@ -62,3 +62,77 @@ def test_modal_volume_alias_admits_native_input_but_rejects_escape(tmp_path, mon
     manifest['requests'][0]['videos'] = [str(escape)]
     with pytest.raises(ValueError, match='under the evidence volume'):
         flora_hosted.execute(manifest, lambda: None)
+
+
+def test_resident_backlog_binds_order_and_refuses_duplicate_ids():
+    request = {'id': 'same', 'video_sha256': ['sha'], 'events': [],
+               'task': 'task', 'profile': 'human', 'models': {}}
+    batches = [{'requests': [request]}, {'requests': [{**request, 'task': 'different'}]}]
+    manifest = {'batches': batches, 'requests': [b['requests'][0] for b in batches]}
+    assert flora_hosted.caption_batches(manifest) == batches
+    manifest['requests'] = [{'id': 'changed'}, {'id': 'same'}]
+    with pytest.raises(ValueError, match='ordered batches'):
+        flora_hosted.caption_batches(manifest)
+    batches[0]['requests'].append({'id': 'same'})
+    with pytest.raises(ValueError, match='unique within'):
+        flora_hosted.caption_batches(manifest)
+
+
+def test_resident_backlog_refuses_duplicate_paid_inputs_even_with_different_ids():
+    request = {'id': 'a', 'video_sha256': ['sha'], 'events': [],
+               'task': 'task', 'profile': 'human', 'models': {}}
+    batches = [{'requests': [request]}, {'requests': [{**request, 'id': 'b'}]}]
+    with pytest.raises(ValueError, match='Duplicate caption inputs'):
+        flora_hosted.caption_batches({'batches': batches,
+            'requests': [request, {**request, 'id': 'b'}]})
+
+
+def test_resident_backlog_is_bounded_before_gpu_dispatch():
+    for batches in ([], [{'requests': [{'id': 'a'}]}] * 9,
+                    [{'requests': [{'id': str(i)} for i in range(17)]}]):
+        with pytest.raises(ValueError):
+            flora_hosted.caption_batches({'batches': batches, 'requests': []})
+
+
+def test_admitted_cache_rejects_modified_bytes_and_path_escape(tmp_path, monkeypatch):
+    monkeypatch.setattr(flora_hosted, 'EVIDENCE_ROOT', tmp_path)
+    cache = tmp_path / 'prepared' / 'batch' / 'cache.json'
+    cache.parent.mkdir(parents=True)
+    cache.write_text('{}')
+    descriptor = {'path': str(cache), 'sha256': hashlib.sha256(cache.read_bytes()).hexdigest()}
+    assert flora_hosted.admitted_cache(descriptor) == cache.parent
+    cache.write_text('{"changed": true}')
+    with pytest.raises(ValueError, match='differs'):
+        flora_hosted.admitted_cache(descriptor)
+    outside = tmp_path / 'outside' / 'cache.json'
+    outside.parent.mkdir()
+    outside.write_text('{}')
+    descriptor['path'] = str(outside)
+    with pytest.raises(ValueError, match='differs'):
+        flora_hosted.admitted_cache(descriptor)
+
+
+def test_collect_existing_call_is_idempotent_and_resumes_evidence_transfer(tmp_path):
+    source = tmp_path / 'run.json'
+    source.write_text('{}')
+    ledger = tmp_path / 'modal-budget.jsonl'
+    ledger.write_text(json.dumps({'run_id': 'run', 'reserved_usd': 4}) + '\n')
+    payload = b'paid response'
+    result = {'run_id': 'run', 'status': 'complete', 'error': None, 'elapsed_s': 10,
+              'files': {'result.json': hashlib.sha256(payload).hexdigest()}}
+    def interrupted(path):
+        yield payload[:3]
+        raise ConnectionError('offline')
+    with pytest.raises(ConnectionError):
+        flora_hosted.retain_result(source, result, interrupted)
+    assert not (tmp_path / 'run.artifacts/result.json').exists()
+    flora_hosted.retain_result(source, result, lambda path: iter([payload]))
+    def forbidden(path):
+        pytest.fail('verified artifact must not be downloaded again')
+    flora_hosted.retain_result(source, result, forbidden)
+    rows = [json.loads(line) for line in ledger.read_text().splitlines()]
+    assert len(rows) == 2
+    assert rows[1]['released_usd'] < 4
+    assert (tmp_path / 'run.artifacts/result.json').read_bytes() == payload
+    with pytest.raises(ValueError, match='receipt changed'):
+        flora_hosted.retain_result(source, {**result, 'status': 'failed'}, forbidden)

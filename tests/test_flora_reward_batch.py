@@ -2,12 +2,14 @@
 import copy
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import av
 import numpy as np
 import pytest
 
 from events import flora, flora_reward_batch as batch
+from events.flora_journal import GenerationJournal
 
 
 @pytest.fixture
@@ -138,3 +140,79 @@ def test_terminal_recovery_refuses_changed_generation(terminal_recovery):
     with pytest.raises(flora.FloraError, match='differs from durable'):
         batch.recover_outcome([planned_request], output_dir, journal_dir)
     assert not (output_dir / 'outcome.jsonl').exists()
+
+
+@pytest.mark.parametrize('value', [None, 0, 1, 'false'])
+def test_reward_mode_requires_boolean_before_media_admission(tmp_path, value):
+    journal = GenerationJournal(tmp_path / 'journal', 'request')
+    with pytest.raises(flora.FloraError, match='with_rationale must be a boolean'):
+        batch.run([], tmp_path / 'result', journal, with_rationale=value)
+    assert not (tmp_path / 'result').exists()
+
+
+@pytest.mark.parametrize('with_rationale', [False, True])
+def test_retained_outcome_is_bound_to_rationale_mode(planned_request, tmp_path, with_rationale):
+    output = tmp_path / 'result'
+    output.mkdir()
+    journal = GenerationJournal(tmp_path / 'journal', 'request')
+    binding = {'requests_sha256': batch.input_digest([planned_request]), 'stages': ['outcome'],
+               'max_num_seqs': 8, 'journal_sha256': 'request', 'with_rationale': with_rationale,
+               'adapter_sha256': flora.digest(Path(batch.__file__))}
+    (output / 'batch.json').write_text(json.dumps(binding))
+    row = {'id': 'episode', 'task': planned_request['task'], 'duration_s': 2,
+           'score': 3, 'expected_score': 3, 'progress': 0.5,
+           'probabilities': {'1': 0, '2': 0, '3': 1, '4': 0, '5': 0}}
+    (output / 'outcome.jsonl').write_text(json.dumps(row) + '\n')
+    (output / 'receipt.json').write_text(json.dumps({
+        'binding': binding, 'raw_sha256': {'outcome': flora.digest(output / 'outcome.jsonl')}}))
+    kwargs = {} if with_rationale else {'with_rationale': False}
+    assert batch.run([planned_request], output, journal, stage='outcome', **kwargs) == {'outcome': [row]}
+    with pytest.raises(flora.FloraError, match='inputs or implementation changed'):
+        batch.run([planned_request], output, journal, stage='outcome', with_rationale=not with_rationale)
+    assert not (output / '.running').exists()
+
+
+@pytest.mark.parametrize('stage,expected', [
+    ('outcome', [[0, 19]]), ('dense', [(0, 8), (8, 19)]),
+    ('both', [[0, 19], (0, 8), (8, 19)]),
+])
+def test_native_media_admission_reads_every_selected_plan(stage, expected):
+    calls = []
+    collage = SimpleNamespace(duration_s=2, num_frames=20, fps=10,
+                              frames=lambda indices: calls.append(indices), release=lambda: calls.append('released'))
+    core = SimpleNamespace(Collage=lambda paths: collage, terminal_frame_indices=lambda n, fps: [0, 19],
+                           dense_windows=lambda n, fps: [SimpleNamespace(frame_indices=p) for p in ((0, 8), (8, 19))])
+    batch._native_media_preflight([{'id': 'episode', 'videos': ['native.mp4']}],
+                                  [{'id': 'episode', 'duration_s': 2}], core, stage)
+    assert calls == expected + ['released']
+
+
+@pytest.mark.parametrize('clock_mismatch', [False, True])
+def test_native_media_failure_releases_buffers_and_names_episode(clock_mismatch):
+    released = []
+    def fail_read(indices):
+        raise ValueError('decoded fewer frames than its container reports')
+    collage = SimpleNamespace(duration_s=2.1 if clock_mismatch else 2, num_frames=21, fps=10,
+                              frames=fail_read, release=lambda: released.append(True))
+    core = SimpleNamespace(Collage=lambda paths: collage, terminal_frame_indices=lambda n, fps: [0, 20])
+    with pytest.raises(flora.FloraError, match='Native reward media rejected episode:'):
+        batch._native_media_preflight([{'id': 'episode', 'videos': ['native.mp4']}],
+                                      [{'id': 'episode', 'duration_s': 2}], core, 'outcome')
+    assert released == [True]
+
+
+@pytest.mark.parametrize('packets', [16, 17])
+def test_decoded_probe_preserves_geometry_and_restores_on_failure(planned_request, packets):
+    path = planned_request['videos'][0]
+    original = lambda name: SimpleNamespace(path=name, fps=8, num_frames=packets, width=64, height=48)
+    core = SimpleNamespace(probe_video=original, VideoInfo=lambda path, fps, num_frames, width, height:
+                           SimpleNamespace(path=path, fps=fps, num_frames=num_frames, width=width, height=height))
+    with pytest.raises(RuntimeError, match='abort native stage'):
+        with batch._decoded_video_probe(core, [{'videos': [path]}]) as audit:
+            assert vars(core.probe_video(path)) == {'path': path, 'fps': 8., 'num_frames': 16, 'width': 64, 'height': 48}
+            assert audit[0]['packet_count_corrected'] is (packets != 16)
+            assert audit[0]['native_packet_count'] == packets
+            with pytest.raises(flora.FloraError, match='unadmitted'):
+                core.probe_video('another.mp4')
+            raise RuntimeError('abort native stage')
+    assert core.probe_video is original
