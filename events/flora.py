@@ -56,10 +56,16 @@ class VideoClock:
     duration: float
     fps: Fraction
     frames: int
+    constant_rate: bool = True
 
 
-def video_clock(path: Path) -> VideoClock:
-    """Refuse clocks the released rewarder cannot represent, before any GPU work."""
+def video_clock(path: Path, *, caption_only: bool = False) -> VideoClock:
+    """Decode the native PTS clock; rewards retain their constant-rate contract.
+
+    Caption-only duration matches pinned Flora media.probe: final native PTS plus
+    the last frame's exposure, falling back to 1 / average_rate, in microseconds.
+    No frames are duplicated, discarded or resampled to admit variable-rate input.
+    """
     import av
 
     if path.stat().st_size > 256 * 1024 * 1024:
@@ -71,33 +77,66 @@ def video_clock(path: Path) -> VideoClock:
         rate = stream.average_rate
         if rate is None or rate < 4 or max(stream.width, stream.height) > 4096:
             raise FloraError("Flora requires at least 4 FPS and at most 4096 pixels per side")
-        first = None
+        first = previous = None
+        last_length = None
         count = 0
+        constant_rate = True
         for frame in container.decode(stream):
             if frame.pts is None:
                 raise FloraError("every frame needs a source presentation timestamp")
             first = frame.pts if first is None else first
             elapsed = Fraction(frame.pts - first) * stream.time_base
+            if previous is not None and elapsed <= previous:
+                raise FloraError("source presentation timestamps must be strictly increasing")
+            previous = elapsed
             if abs(elapsed - Fraction(count, rate)) > Fraction(1, 1000000):
-                raise FloraError("combined Flora rewards require constant-rate native video; do not resample")
+                constant_rate = False
+                if not caption_only:
+                    raise FloraError("combined Flora rewards require constant-rate native video; do not resample")
+            last_length = Fraction(frame.duration) * stream.time_base if frame.duration else None
             count += 1
             if count > 7200 or elapsed >= 120:
                 raise FloraError("Flora supports at most 120 seconds and 7200 source frames")
-        duration = float(Fraction(count, rate))
-        if count < 2 or duration > 120:
+        if count < 2:
             raise FloraError("unsupported video duration or frame count")
-        return VideoClock(duration, rate, count)
+        duration = (round((previous + (last_length or Fraction(1, rate))) * 1000000) / 1000000
+                    if caption_only else float(Fraction(count, rate)))
+        if not 0 < duration <= 120:
+            raise FloraError("unsupported video duration or frame count")
+        return VideoClock(duration, rate, count, constant_rate)
 
 
 def prepare(videos: list[Path], events_path: Path, task: str, profile: str, out: Path) -> dict:
+    """Prepare the existing combined caption/reward contract, requiring native CFR."""
+    return _prepare(videos, events_path, task, profile, out, caption_only=False)
+
+
+def prepare_caption(videos: list[Path], events_path: Path, task: str, profile: str, out: Path) -> dict:
+    """Admit caption-only native inputs, including VFR for one human-profile view."""
+    return _prepare(videos, events_path, task, profile, out, caption_only=True)
+
+
+def require_stage(request: dict, stage: str) -> None:
+    """Refuse broader inference for a caption-only request before paid work."""
+    scope = request.get("inference_scope", "caption-and-reward")
+    if scope not in {"caption", "caption-and-reward"}:
+        raise FloraError("unknown Flora inference scope")
+    if scope == "caption" and stage not in {"caption", "caption-session", "caption-native"}:
+        raise FloraError("caption-only inputs are not admitted for rewards or segmentation")
+
+
+def _prepare(videos: list[Path], events_path: Path, task: str, profile: str, out: Path, *,
+             caption_only: bool) -> dict:
     if not task.strip() or len(task.strip()) > 2000:
-        raise FloraError("reward scoring requires an explicit episode task of at most 2000 characters")
+        raise FloraError("Flora requires an explicit episode task of at most 2000 characters")
     if profile not in {"human", "yam", "dex", "tianji"}:
         raise FloraError("unknown Flora profile")
     if len(videos) not in {1, 3} or (profile == "human" and len(videos) != 1):
         raise FloraError("use one camera or main, left wrist, right wrist; human requires one camera")
     videos = [path.resolve(strict=True) for path in videos]
-    clocks = [video_clock(path) for path in videos]
+    clocks = [video_clock(path, caption_only=caption_only) for path in videos]
+    if any(not clock.constant_rate for clock in clocks) and (profile != "human" or len(videos) != 1):
+        raise FloraError("variable-rate captioning requires one human-profile camera")
     if any(clock != clocks[0] for clock in clocks):
         raise FloraError("camera videos must have identical native clocks and start together")
     source = json.loads(events_path.read_text())
@@ -124,6 +163,8 @@ def prepare(videos: list[Path], events_path: Path, task: str, profile: str, out:
                "duration_s": clocks[0].duration, "models": MODELS,
                "adapter_sha256": digest(Path(__file__)), "worker_sha256": digest(WORKER),
                "journal_sha256": digest(Path(__file__).with_name("flora_journal.py"))}
+    if caption_only:
+        request["inference_scope"] = "caption"
     encoded = json.dumps(request, sort_keys=True, separators=(",", ":"), allow_nan=False)
     request["request_sha256"] = hashlib.sha256(encoded.encode()).hexdigest()
     out.mkdir(parents=True, exist_ok=True)
@@ -156,6 +197,7 @@ def read_result(path: Path) -> dict:
 
 
 def validate(stage: str, raw: dict, request: dict) -> None:
+    require_stage(request, stage)
     duration = request["duration_s"]
     if stage == "caption":
         rows = raw.get("segments")
@@ -220,6 +262,9 @@ def validate(stage: str, raw: dict, request: dict) -> None:
 
 def execute(request: dict, out: Path, captioner_python: str, rewarder_python: str, *,
             resume_interrupted: bool = False) -> Path:
+    # This entrypoint intentionally runs every stage; caption-only inputs go
+    # through the explicitly caption-scoped hosted/local worker entrypoints.
+    require_stage(request, "dense")
     out = out.resolve()
     # One owner prevents concurrent callers from duplicating the same compute.
     guard = out / ".running"

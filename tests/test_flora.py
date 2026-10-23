@@ -306,3 +306,81 @@ def test_remote_intent_commit_failure_prevents_paid_call(tmp_path):
     journal = GenerationJournal(tmp_path / 'generations', 'request', commit)
     with pytest.raises(OSError, match='persistence'):
         journal.run({'x': 1}, forbidden)
+
+
+@pytest.fixture
+def native_vfr(tmp_path):
+    from fractions import Fraction
+
+    video = tmp_path / "native-vfr.mp4"
+    timestamps_ms = [0, 40, 80, 100, 140, 180, 200, 240, 280, 300]
+    with av.open(str(video), "w") as container:
+        stream = container.add_stream("mpeg4", rate=25)
+        stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+        stream.time_base = stream.codec_context.time_base = Fraction(1, 1000)
+        for index, pts in enumerate(timestamps_ms):
+            frame = av.VideoFrame.from_ndarray(
+                np.full((48, 64, 3), index * 20, dtype=np.uint8), format="rgb24")
+            frame.pts, frame.time_base = pts, Fraction(1, 1000)
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        for packet in stream.encode():
+            container.mux(packet)
+    with av.open(str(video)) as container:
+        stream = container.streams.video[0]
+        frames = list(container.decode(stream))
+        # Assert the fixture really retains 40/40/20 ms cadence after encoding.
+        assert [float(frame.pts * stream.time_base) for frame in frames] == [
+            value / 1000 for value in timestamps_ms]
+        tail = frames[-1].duration * stream.time_base or Fraction(1, stream.average_rate)
+        duration = round((frames[-1].pts * stream.time_base + tail) * 1000000) / 1000000
+    events = tmp_path / "vfr-events.json"
+    intervals = [{"start_s": 0, "end_s": 0.14}, {"start_s": 0.14, "end_s": duration}]
+    events.write_text(json.dumps({"events": intervals}))
+    return video, events, duration, intervals
+
+
+def test_caption_only_preserves_genuine_variable_rate_native_clock(native_vfr, tmp_path):
+    video, events, duration, intervals = native_vfr
+    original = video.read_bytes()
+    request = flora.prepare_caption([video], events, "Move the cup.", "human", tmp_path / "caption")
+    clock = flora.video_clock(video, caption_only=True)
+    assert clock.duration == duration and clock.frames == 10 and clock.constant_rate is False
+    assert request["duration_s"] == duration and request["events"] == intervals
+    assert request["inference_scope"] == "caption"
+    assert video.read_bytes() == original
+    assert flora.prepare_caption([video], events, "Move the cup.", "human", tmp_path / "caption") == request
+    for stage in ("caption", "caption-native", "caption-session"):
+        flora.require_stage(request, stage)
+    flora.validate("caption", {"segments": [
+        {**row, "caption": "Move the cup.", "status": "complete"} for row in intervals]}, request)
+
+
+def test_variable_rate_never_enters_combined_rewards_or_robot_profile(native_vfr, tmp_path):
+    video, events, _, _ = native_vfr
+    with pytest.raises(flora.FloraError, match="constant-rate"):
+        flora.video_clock(video)
+    with pytest.raises(flora.FloraError, match="constant-rate"):
+        flora.prepare([video], events, "Move the cup.", "human", tmp_path / "combined")
+    with pytest.raises(flora.FloraError, match="one human-profile camera"):
+        flora.prepare_caption([video], events, "Move the cup.", "yam", tmp_path / "robot")
+    request = flora.prepare_caption([video], events, "Move the cup.", "human", tmp_path / "caption")
+    for stage in ("outcome", "dense", "reward", "reward-outcome", "reward-dense", "segment-native"):
+        with pytest.raises(flora.FloraError, match="caption-only"):
+            flora.require_stage(request, stage)
+    with pytest.raises(flora.FloraError, match="caption-only"):
+        flora.execute(request, tmp_path / "caption", "/no/gpu/python", "/no/gpu/python")
+    with pytest.raises(flora.FloraError, match="caption-only"):
+        flora.validate("dense", {}, request)
+    assert not (tmp_path / "caption/.running").exists()
+    assert not (tmp_path / "combined").exists()
+
+
+def test_caption_scope_is_part_of_immutable_request_identity(planned):
+    request, out, video, events = planned
+    caption = flora.prepare_caption([video], events, request["task"], "human", out.parent / "caption")
+    assert caption["request_sha256"] != request["request_sha256"]
+    with pytest.raises(flora.FloraError, match="changed"):
+        flora.prepare_caption([video], events, request["task"], "human", out)
+    with pytest.raises(flora.FloraError, match="unknown Flora inference scope"):
+        flora.require_stage({**caption, "inference_scope": "unbounded"}, "caption")

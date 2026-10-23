@@ -19,8 +19,13 @@ from types import SimpleNamespace
 
 if __package__:
     from .flora_journal import GenerationJournal
+    from .flora import require_stage
 else:
-    from flora_journal import GenerationJournal
+    # The isolated worker is also launched by absolute filename from outside the
+    # checkout. Make its sibling packages available without requiring PYTHONPATH.
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from events.flora_journal import GenerationJournal
+    from events.flora import require_stage
 
 
 def _caption_generate(original, journal: GenerationJournal):
@@ -251,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("Output already exists; preserve the original result")
     request_bytes = args.request.read_bytes()
     request = json.loads(request_bytes)
+    require_stage(request, args.stage)
     journal_path = Path(__file__).with_name("flora_journal.py")
     if hashlib.sha256(journal_path.read_bytes()).hexdigest() != request["journal_sha256"]:
         raise ValueError("Generation journal code differs from the saved request")

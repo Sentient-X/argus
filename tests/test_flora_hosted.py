@@ -33,7 +33,8 @@ def test_hosted_replay_verifies_saved_bytes_and_never_reenters_inference(tmp_pat
         flora_hosted.execute(manifest, forbidden)
 
 
-def test_modal_volume_alias_admits_native_input_but_rejects_escape(tmp_path, monkeypatch):
+@pytest.mark.parametrize("concurrency", [1, 32])
+def test_modal_volume_alias_admits_native_input_but_rejects_escape(tmp_path, monkeypatch, concurrency):
     from events.flora import MODELS
     actual = tmp_path / 'mounted-volume'
     (actual / 'inputs').mkdir(parents=True)
@@ -43,7 +44,7 @@ def test_modal_volume_alias_admits_native_input_but_rejects_escape(tmp_path, mon
     video = alias / 'inputs' / 'native.mp4'
     video.write_bytes(b'original native bytes')
     manifest = {'run_id': 'alias', 'stage': 'caption', 'use': 'noncommercial_research',
-                'max_num_seqs': 1, 'implementation_sha256': {
+                'max_num_seqs': concurrency, 'implementation_sha256': {
                     p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in Path(flora_hosted.__file__).parent.glob('flora*.py')},
                 'requests': [{'models': MODELS, 'videos': [str(video)],
@@ -87,8 +88,34 @@ def test_resident_backlog_refuses_duplicate_paid_inputs_even_with_different_ids(
             'requests': [request, {**request, 'id': 'b'}]})
 
 
+
+def test_resident_backlog_accepts_32_full_groups_and_refuses_one_extra():
+    batches = []
+    for batch_index in range(32):
+        requests = [{"id": f"episode-{batch_index}-{episode_index}",
+                     "video_sha256": [f"source-{batch_index}-{episode_index}"],
+                     "events": [{"start_s": 0, "end_s": 1}],
+                     "task": "Move the cup.", "profile": "human", "models": {}}
+                    for episode_index in range(16)]
+        batches.append({"requests": requests})
+    requests = [request for batch in batches for request in batch["requests"]]
+    manifest = {"batches": batches, "requests": requests}
+    admitted = flora_hosted.caption_batches(manifest)
+    assert len(admitted) == 32
+    assert sum(len(batch["requests"]) for batch in admitted) == 512
+    assert [request for batch in admitted for request in batch["requests"]] == requests
+    extra = {"requests": [{**requests[0], "id": "extra", "video_sha256": ["extra-source"]}]}
+    with pytest.raises(ValueError, match="1..32 admitted batches"):
+        flora_hosted.caption_batches({"batches": batches + [extra],
+                                      "requests": requests + extra["requests"]})
+    too_wide = {"requests": batches[0]["requests"] + extra["requests"]}
+    with pytest.raises(ValueError, match="1..16 episodes"):
+        flora_hosted.caption_batches({"batches": [too_wide] + batches[1:],
+                                      "requests": too_wide["requests"] + requests[16:]})
+
+
 def test_resident_backlog_is_bounded_before_gpu_dispatch():
-    for batches in ([], [{'requests': [{'id': 'a'}]}] * 9,
+    for batches in ([], [{'requests': [{'id': 'a'}]}] * 33,
                     [{'requests': [{'id': str(i)} for i in range(17)]}]):
         with pytest.raises(ValueError):
             flora_hosted.caption_batches({'batches': batches, 'requests': []})

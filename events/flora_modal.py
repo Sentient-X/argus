@@ -59,22 +59,57 @@ def prefetch(segmenter_only: bool = False):
         result[kind] = {"runtime": runtime, "weights": path, "revision": weights}
     return result
 
-@app.function(image=gpu_image, cpu=(8, 8), memory=(65536, 65536),
-              volumes={"/models": cache, "/evidence": evidence}, timeout=1200,
-              retries=0, max_containers=1, single_use_containers=True)
+@app.function(image=gpu_image, cpu=(4, 4), memory=(16384, 16384),
+              volumes={"/models": cache, "/evidence": evidence}, timeout=1200, startup_timeout=600,
+              retries=0, max_containers=3, single_use_containers=True)
 def inspect(manifest: dict):
     """Exercise the actual upstream media/processor contract without renting a GPU."""
     evidence.reload()
+    import re
+    import time
+    from events.flora_journal import GenerationJournal, _save, input_digest
+
+    run_id = manifest["run_id"]
+    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}", run_id):
+        raise ValueError("Invalid admission run id")
+    root = Path("/evidence/admissions") / run_id
+    journal = GenerationJournal(root, input_digest(manifest), evidence.commit)
+
+    def measured():
+        started = time.time()
+        try:
+            result = _inspect(manifest)
+        except BaseException as exc:
+            _save(root / "failure.json", {"started_at_unix": started,
+                "ended_at_unix": time.time(), "error": str(exc)})
+            evidence.commit()
+            raise
+        ended = time.time()
+        return {"result": result, "started_at_unix": started, "ended_at_unix": ended,
+                "elapsed_s": ended - started,
+                "resources": {"cpu": 4, "memory_gib": 16},
+                "compute_cost_estimate_usd": (ended - started) * (4*.0000131 + 16*.00000222),
+                "cost_note": "CPU and memory list-price estimate; startup and storage separate."}
+
+    return journal.run({"stage": "cpu-admission", "manifest": manifest}, measured)["result"]
+
+
+def _inspect(manifest: dict):
     import hashlib
     from events import flora_hosted
     implementation = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                       for p in Path(flora_hosted.__file__).parent.glob("flora*.py")}
     if implementation != manifest.get("implementation_sha256"):
         raise ValueError("CPU admission implementation differs from the submitted batch")
+    from events.flora import require_stage
+    for request in manifest["requests"]:
+        require_stage(request, manifest["stage"])
     if type(manifest.get("reward_rationale", True)) is not bool:
         raise ValueError("reward_rationale must be a boolean")
     if manifest["stage"] in {"caption", "caption-session"}:
         import re
+        from events.flora_journal import _save
+        from events.flora_media import lossless_png_serialization
         from events.flora_vllm import prepare_many_cache
         run_id = manifest["run_id"]
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}", run_id):
@@ -88,7 +123,10 @@ def inspect(manifest: dict):
                 flora_hosted.verify_prepared_cache(batch["requests"], descriptor)
             else:
                 name = f"{run_id}-batch-{index:03d}" if len(batches) > 1 else run_id
-                descriptor = prepare_many_cache(batch["requests"], Path("/evidence/prepared") / name)
+                with lossless_png_serialization() as serialization:
+                    descriptor = prepare_many_cache(batch["requests"], Path("/evidence/prepared") / name)
+                descriptor["png_serialization"] = serialization
+                _save(Path(descriptor["path"]).with_name("serialization.json"), serialization)
                 evidence.commit()
             descriptors.append(descriptor)
         result = descriptors if manifest["stage"] == "caption-session" else descriptors[0]

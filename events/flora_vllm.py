@@ -7,6 +7,8 @@ parity before accepting a completion. GPU dependencies are imported lazily.
 from __future__ import annotations
 
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 import hashlib
 import json
 import os
@@ -17,6 +19,10 @@ import time
 from .flora_journal import GenerationJournal, input_digest
 
 _PREPARE_LOCK = threading.RLock()
+# At most the active batch plus one prepared successor is resident. Bound the
+# bytes before decoding; the hosted worker has a separate hard process deadline.
+MAX_PREPARED_ARRAY_BYTES = 4 * 1024 ** 3
+MAX_PREPARED_MANIFEST_BYTES = 64 * 1024 ** 2
 
 
 def _verify_gdn(model, root: Path) -> dict:
@@ -454,6 +460,7 @@ def prepare_many_cache(requests: list[dict], cache_dir: Path) -> dict:
     return {"path": str(manifest.absolute()), "sha256": _file_sha(manifest),
             "requests_sha256": record["requests_sha256"], "files": files,
             "episodes": len(episodes),
+            "prepared_array_bytes": sum((cache_dir / name).stat().st_size for name in files),
             "cpu_prepare_wall_s": record["cpu_prepare_wall_s"],
             "intervals": sum(len(episode["prepared"]) for episode in episodes)}
 
@@ -462,23 +469,41 @@ def _load_prepared_cache(requests: list[dict], cache_dir: Path, *,
                          resident: ResidentCaptionSession | None = None) -> list[tuple]:
     import numpy as np
 
-    record = json.loads((cache_dir / "cache.json").read_text())
+    manifest = cache_dir / "cache.json"
+    if manifest.stat().st_size > MAX_PREPARED_MANIFEST_BYTES:
+        raise ValueError("Preparation cache manifest exceeds the memory limit")
+    record = json.loads(manifest.read_text())
     if (record["version"] != 1 or record["requests_sha256"] != input_digest(requests)
             or record["implementation_sha256"] != _file_sha(Path(__file__))
             or len(record["episodes"]) != len(requests)):
         raise ValueError("Preparation cache request or implementation binding differs")
+    array_bytes = 0
     for name, digest in record["files"].items():
         path = cache_dir / name
-        if (Path(name).name != name or not name.endswith(".npy") or path.is_symlink()
-                or _file_sha(path) != digest):
+        if Path(name).name != name or not name.endswith(".npy") or path.is_symlink():
             raise ValueError("Preparation cache array hash differs")
+        array_bytes += path.stat().st_size
+        if array_bytes > MAX_PREPARED_ARRAY_BYTES:
+            raise ValueError("Preparation cache arrays exceed the memory limit")
+        if _file_sha(path) != digest:
+            raise ValueError("Preparation cache array hash differs")
+
+    decoded_arrays = {}
 
     def decode(value):
         if isinstance(value, dict):
             if set(value) == {"__flora_array__"}:
                 if value["__flora_array__"] not in record["files"]:
                     raise ValueError("Unbound preparation cache array")
-                return np.load(cache_dir / value["__flora_array__"], allow_pickle=False)
+                name = value["__flora_array__"]
+                if name not in decoded_arrays:
+                    # A read-only mapping checks the NPY extent before allocating;
+                    # a forged huge shape must not allocate beyond the byte cap.
+                    array = np.load(cache_dir / name, mmap_mode="r", allow_pickle=False)
+                    if array.nbytes > MAX_PREPARED_ARRAY_BYTES:
+                        raise ValueError("Preparation cache array exceeds the memory limit")
+                    decoded_arrays[name] = np.array(array, copy=True)
+                return decoded_arrays[name]
             if set(value) == {"__flora_tuple__"}:
                 return tuple(decode(item) for item in value["__flora_tuple__"])
             return {key: decode(item) for key, item in value.items()}
@@ -509,6 +534,7 @@ def _load_prepared_cache(requests: list[dict], cache_dir: Path, *,
         _validate_parity(episode["processor_parity"], root, prepared)
         receipt = decode(episode["receipt"])
         receipt["processor_admission"] = episode["processor_parity"]
+        receipt["prepared_cache_array_bytes"] = array_bytes
         episodes.append((root, prepared, receipt))
     return episodes
 
@@ -639,11 +665,8 @@ def caption_many(requests: list[dict], output_dir: Path, journal: GenerationJour
         session._lock.release()
 
 
-def _caption_many(requests: list[dict], output_dir: Path, journal: GenerationJournal,
-                  max_num_seqs: int, prepared_cache: Path | None,
-                  session: ResidentCaptionSession) -> list[dict]:
-    from .flora_worker import _write_json
-
+def _prepare_caption_many(requests: list[dict], output_dir: Path, prepared_cache: Path | None,
+                          session: ResidentCaptionSession) -> tuple:
     if not requests:
         raise ValueError("Provide at least one captioning episode")
     ids = [request["id"] for request in requests]
@@ -653,7 +676,6 @@ def _caption_many(requests: list[dict], output_dir: Path, journal: GenerationJou
     if any(path.exists() for path in paths):
         raise ValueError("Caption outputs already exist; preserve original results")
     started = time.monotonic()
-    reused = session._engine is not None
     if prepared_cache is None:
         episodes = [prepare(request) for request in requests]
         for root, processor, items, receipt in episodes:
@@ -667,13 +689,80 @@ def _caption_many(requests: list[dict], output_dir: Path, journal: GenerationJou
     specs = [request["models"]["captioner"] for request in requests]
     if any(spec != specs[0] for spec in specs):
         raise ValueError("All episodes in one batch must use the same model binding")
+    return episodes, paths, time.monotonic() - started
+
+
+@dataclass(frozen=True)
+class CaptionChunk:
+    requests: list[dict]
+    output_dir: Path
+    journal: GenerationJournal
+    prepared_cache: Path
+
+
+def caption_stream(chunks: list[CaptionChunk], session: ResidentCaptionSession):
+    """One resident engine, one CPU lookahead, durable replies before next errors.
+
+    Preparation never touches the engine or starts inference. A successor starts
+    only after the initial weight load, allowing it to reuse that verification.
+    The caller must persist each yielded chunk before advancing the iterator.
+    """
+    if not chunks or len(chunks) > session.max_chunks - session._chunks:
+        raise ValueError("Caption stream exceeds its admitted chunk limit")
+    if not session._lock.acquire(blocking=False):
+        raise ValueError("Resident caption session already has an active chunk")
+    try:
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="flora-input") as executor:
+            pending = None
+            for index, chunk in enumerate(chunks):
+                wait_started = time.monotonic()
+                prepared_batch = (pending.result() if pending is not None else
+                                  _prepare_caption_many(chunk.requests, chunk.output_dir,
+                                                        chunk.prepared_cache, session))
+                wait_wall_s = time.monotonic() - wait_started
+                pending = None
+
+                def preload_next():
+                    nonlocal pending
+                    if index + 1 < len(chunks):
+                        following = chunks[index + 1]
+                        pending = executor.submit(_prepare_caption_many, following.requests,
+                                                  following.output_dir, following.prepared_cache, session)
+
+                results = _caption_many(chunk.requests, chunk.output_dir, chunk.journal,
+                                        session.max_num_seqs, chunk.prepared_cache, session,
+                                        prepared_batch=prepared_batch, on_loaded=preload_next,
+                                        preparation_wait_wall_s=wait_wall_s)
+                # Drop the active arrays before waiting on the already bounded
+                # successor; neither futures nor the generator retain old batches.
+                del prepared_batch
+                yield results
+    finally:
+        session._lock.release()
+
+
+def _caption_many(requests: list[dict], output_dir: Path, journal: GenerationJournal,
+                  max_num_seqs: int, prepared_cache: Path | None,
+                  session: ResidentCaptionSession, *, prepared_batch=None, on_loaded=None,
+                  preparation_wait_wall_s: float | None = None) -> list[dict]:
+    from .flora_worker import _write_json
+
+    started = time.monotonic()
+    reused = session._engine is not None
+    episodes, paths, preparation_wall_s = (prepared_batch if prepared_batch is not None else
+        _prepare_caption_many(requests, output_dir, prepared_cache, session))
+    if any(path.exists() for path in paths):
+        raise ValueError("Caption outputs already exist; preserve original results")
     prepared = [item for _, _, items, _ in episodes for item in items]
     prepared_at = time.monotonic()
-    llm, processor = session._load(episodes[0][0], specs[0])
+    llm, processor = session._load(episodes[0][0], requests[0]["models"]["captioner"])
     loaded_at = time.monotonic()
+    if on_loaded is not None:
+        on_loaded()
     session._chunks += 1
     saved, precision, metrics = _batch(prepared, llm, journal, max_num_seqs,
         admitted_groups=[(items, receipt["processor_admission"]) for _, _, items, receipt in episodes])
+    wait_wall_s = preparation_wall_s if preparation_wait_wall_s is None else preparation_wait_wall_s
     offset, receipts = 0, []
     for (_, _, items, receipt), path in zip(episodes, paths, strict=True):
         for row, completion in zip(receipt["segments"], saved[offset:offset + len(items)], strict=True):
@@ -683,10 +772,15 @@ def _caption_many(requests: list[dict], output_dir: Path, journal: GenerationJou
         receipt["generation_batch_size"] = len(prepared)
         receipt["timing"] = {**metrics, "episodes": len(episodes),
                              "prepared_cache_used": prepared_cache is not None,
+                             "prepared_cache_array_bytes": receipt.get("prepared_cache_array_bytes"),
                              "resident_engine_reused": reused, "resident_chunk": session._chunks,
-                             "prepare_wall_s": prepared_at - started,
+                             "prepare_wall_s": preparation_wall_s,
+                             "preparation_wait_wall_s": wait_wall_s,
+                             "preparation_overlap_wall_s": max(0, preparation_wall_s - wait_wall_s),
+                             "preparation_lookahead": prepared_batch is not None,
                              "engine_load_wall_s": loaded_at - prepared_at,
-                             "total_wall_s": time.monotonic() - started}
+                             "total_wall_s": (time.monotonic() - started +
+                                              (wait_wall_s if prepared_batch is not None else 0))}
         receipts.append(receipt)
     output_dir.mkdir(parents=True, exist_ok=True)
     for path, receipt in zip(paths, receipts, strict=True):

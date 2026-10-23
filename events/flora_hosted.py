@@ -19,8 +19,8 @@ EVIDENCE_ROOT = Path("/evidence")
 def caption_batches(manifest: dict) -> list[dict]:
     """A bounded ready backlog; no polling or unbounded GPU idle time."""
     batches = manifest.get("batches")
-    if not isinstance(batches, list) or not 1 <= len(batches) <= 8:
-        raise ValueError("Caption session needs 1..8 admitted batches")
+    if not isinstance(batches, list) or not 1 <= len(batches) <= 32:
+        raise ValueError("Caption session needs 1..32 admitted batches")
     flattened = []
     identities = set()
     for batch in batches:
@@ -125,7 +125,9 @@ def execute(manifest: dict, commit) -> dict:
         raise ValueError("reward_rationale must be a boolean")
     if manifest["use"] != "noncommercial_research":
         raise ValueError("Research use acknowledgement required")
-    if manifest["max_num_seqs"] not in (1, 2, 4, 8, 16):
+    caption_concurrency = (manifest["stage"] in {"caption", "caption-session"}
+                           and manifest["max_num_seqs"] == 32)
+    if manifest["max_num_seqs"] not in (1, 2, 4, 8, 16) and not caption_concurrency:
         raise ValueError("Unsupported concurrency")
     root = EVIDENCE_ROOT / "runs" / run_id
     root.mkdir(parents=True, exist_ok=True)
@@ -153,7 +155,8 @@ def execute(manifest: dict, commit) -> dict:
     elif not isinstance(requests, list) or not 1 <= len(requests) <= (64 if manifest["stage"] == "reward-outcome" else 16):
         raise ValueError("Batch exceeds its bounded episode count")
     for request in requests:
-        from events.flora import MODELS
+        from events.flora import MODELS, require_stage
+        require_stage(request, manifest["stage"])
         if request["models"] != MODELS:
             raise ValueError("Model code and weights must match the audited release")
         for name, expected in zip(request["videos"], request["video_sha256"], strict=True):
@@ -221,6 +224,9 @@ def worker(root: Path) -> None:
         name: importlib.metadata.version(name) for name in
         ("torch", "vllm", "transformers", "av", "huggingface-hub", "peft")}, commit)
     stage = manifest["stage"]
+    from events.flora import require_stage
+    for request in manifest["requests"]:
+        require_stage(request, stage)
     if stage == "segment-native":
         from events.flora_segment import run
         run(manifest["requests"], root / "results", journal,
@@ -232,20 +238,31 @@ def worker(root: Path) -> None:
             with_rationale=manifest.get("reward_rationale", True))
     elif stage in {"caption", "caption-session"}:
         from events.flora import validate
-        from events.flora_vllm import caption_many, ResidentCaptionSession
+        from events.flora_vllm import CaptionChunk, caption_stream, ResidentCaptionSession
         batches = caption_batches(manifest) if stage == "caption-session" else [manifest]
-        session = ResidentCaptionSession(max_num_seqs=manifest["max_num_seqs"])
+        session = ResidentCaptionSession(max_num_seqs=manifest["max_num_seqs"], max_chunks=len(batches))
+        chunks = []
         for index, batch in enumerate(batches):
             batch_root = root / "batches" / f"{index:03d}" if stage == "caption-session" else root
             batch_journal = (GenerationJournal(batch_root / "generations",
                                               input_digest({"manifest": manifest, "batch_index": index}), commit)
                              if stage == "caption-session" else journal)
-            results = caption_many(batch["requests"], batch_root / "results", batch_journal,
-                                   max_num_seqs=manifest["max_num_seqs"],
-                                   prepared_cache=admitted_cache(batch["prepared_cache"]), session=session)
-            for request, result in zip(batch["requests"], results, strict=True):
-                validate("caption", result, request)
-            save(batch_root / "complete.json", {"batch_index": index, "episodes": len(results)}, commit)
+            chunks.append(CaptionChunk(batch["requests"], batch_root / "results", batch_journal,
+                                       admitted_cache(batch["prepared_cache"])))
+        from events.flora_prefetch import CaptionCachePrefetch
+        prefetch = CaptionCachePrefetch([batch["prepared_cache"] for batch in batches],
+                                        EVIDENCE_ROOT / "prepared")
+        try:
+            with prefetch:
+                for index, results in enumerate(caption_stream(chunks, session)):
+                    chunk = chunks[index]
+                    for request, result in zip(chunk.requests, results, strict=True):
+                        validate("caption", result, request)
+                    save(chunk.output_dir.parent / "complete.json",
+                         {"batch_index": index, "episodes": len(results)}, commit)
+                    prefetch.completed(index)
+        finally:
+            save(root / "cache-prefetch.json", prefetch.snapshot(), commit)
     else:
         from events.flora import validate
         from events.flora_worker import _caption as caption

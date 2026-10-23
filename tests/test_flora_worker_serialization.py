@@ -6,6 +6,24 @@ import pytest
 from events.flora_worker import _caption_load_audit, _write_json
 
 
+def test_script_worker_refuses_reward_scope_without_pythonpath(tmp_path):
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+    request = tmp_path / 'request.json'
+    request.write_text(json.dumps({'inference_scope': 'caption'}))
+    worker = Path(__file__).resolve().parents[1] / 'events/flora_worker.py'
+    result = subprocess.run([sys.executable, str(worker), '--stage', 'outcome',
+                             '--request', str(request), '--output', str(tmp_path / 'result.json')],
+                            cwd=tmp_path, env={k: v for k, v in os.environ.items() if k != 'PYTHONPATH'},
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode != 0
+    assert 'caption-only' in result.stderr
+    assert 'ModuleNotFoundError' not in result.stderr
+    assert not (tmp_path / 'result.json').exists()
+
+
 def test_native_loading_key_sets_are_stable_without_mutating_audit(tmp_path):
     original = {'captioner': {'gdn': {'all_values_equal_saved_checkpoint': True},
                              'loading_info': {'missing_keys': set(), 'unexpected_keys': {'z.extra', 'a.extra'},

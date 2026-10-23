@@ -79,6 +79,8 @@ research path does not change the default annotator or production QC. Caption an
 inference passed a three-episode Modal GPU qualification; model quality remains unqualified.
 See the [initial runtime qualification](docs/flora-qualification-2026-10-22.md) and the
 [matched Astra/Sol quality pilot and resident inference results](docs/flora-quality-2026-10-22.md).
+The [finished-data throughput report](docs/flora-throughput-2026-10-23.md) records the
+bulk captioning optimizations, unchanged-input checks and full cost boundaries.
 
 ## Results and further use
 

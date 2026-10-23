@@ -152,3 +152,87 @@ def test_cpu_cache_reuse_rejects_changed_arrays_and_missing_weights_without_full
     with pytest.raises((ValueError, FileNotFoundError)):
         flora_hosted.verify_prepared_cache(requests, descriptor)
     assert calls['checkpoint_hash'] == before
+
+
+def _chunks(root, caches):
+    return [flora.CaptionChunk(requests, root / f"out{index}",
+                               GenerationJournal(root / f"journal{index}", f"batch{index}"), directory)
+            for index, (requests, directory) in enumerate(caches)]
+
+
+def test_stream_prepares_next_episode_during_generation_with_only_one_lookahead(
+        resident_work, monkeypatch):
+    import threading
+
+    root, calls, cache = resident_work
+    chunks = _chunks(root, [cache(name) for name in ("first", "second", "third")])
+    generating, next_prepared = threading.Event(), threading.Event()
+    original_load, original_engine = flora._load_prepared_cache, flora.load_engine
+    loaded = []
+
+    def load(requests, *args, **kwargs):
+        if requests[0]["id"] == "second":
+            assert generating.wait(timeout=5), "lookahead must run alongside generation"
+        result = original_load(requests, *args, **kwargs)
+        loaded.append(requests[0]["id"])
+        if requests[0]["id"] == "second":
+            next_prepared.set()
+        return result
+
+    def engine(*args):
+        llm = original_engine(*args)
+        original_generate = llm.generate
+
+        def generate(*args, **kwargs):
+            if calls["generate"] == 0:
+                generating.set()
+                assert next_prepared.wait(timeout=5), "GPU must not block CPU lookahead"
+            return original_generate(*args, **kwargs)
+        llm.generate = generate
+        return llm
+
+    monkeypatch.setattr(flora, "_load_prepared_cache", load)
+    monkeypatch.setattr(flora, "load_engine", engine)
+    session = flora.ResidentCaptionSession(max_chunks=3)
+    stream = flora.caption_stream(chunks, session)
+    first = next(stream)
+    assert first[0]["segments"][0]["caption"] == "Move the cup."
+    assert loaded == ["first", "second"]  # Third cannot allocate ahead of the bound.
+    rest = list(stream)
+    assert len(rest) == 2
+    assert calls == {"engine": 1, "processor": 1, "generate": 3, "checkpoint_hash": 1}
+    assert all(receipt[0]["timing"]["preparation_lookahead"] for receipt in (first, *rest))
+    assert all(receipt[0]["timing"]["preparation_wait_wall_s"] >= 0 for receipt in (first, *rest))
+    assert not session._lock.locked()
+
+
+def test_invalid_lookahead_preserves_prior_paid_output_and_never_generates_it(resident_work):
+    root, calls, cache = resident_work
+    first, second = cache("first"), cache("second")
+    manifest = second[1] / "cache.json"
+    record = json.loads(manifest.read_text())
+    record["episodes"][0]["processor_parity"]["binding"]["prepared_sha256"] = "changed"
+    manifest.write_text(json.dumps(record))
+    chunks = _chunks(root, [first, second])
+    session = flora.ResidentCaptionSession(max_chunks=2)
+    stream = flora.caption_stream(chunks, session)
+    assert next(stream)[0]["segments"][0]["caption"] == "Move the cup."
+    paid = (chunks[0].journal.root / "000000.result.json").read_bytes()
+    raw = (chunks[0].output_dir / "first.caption.raw.json").read_bytes()
+    with pytest.raises(ValueError, match="parity certificate"):
+        next(stream)
+    assert calls["generate"] == 1
+    assert (chunks[0].journal.root / "000000.result.json").read_bytes() == paid
+    assert (chunks[0].output_dir / "first.caption.raw.json").read_bytes() == raw
+    assert not (chunks[1].journal.root / "000000.intent.json").exists()
+    assert not session._lock.locked()
+
+
+def test_stream_refuses_oversize_array_cache_before_engine_or_allocation(resident_work, monkeypatch):
+    root, calls, cache = resident_work
+    chunks = _chunks(root, [cache("first")])
+    monkeypatch.setattr(flora, "MAX_PREPARED_ARRAY_BYTES", 1)
+    with pytest.raises(ValueError, match="memory limit"):
+        list(flora.caption_stream(chunks, flora.ResidentCaptionSession()))
+    assert calls["engine"] == calls["generate"] == 0
+    assert not (chunks[0].journal.root / "000000.intent.json").exists()
