@@ -200,8 +200,18 @@ def execute(manifest: dict, commit) -> dict:
         gpu_log.close()
         commit()
     elapsed = time.time() - start
+    # A partial telemetry receipt must never hide already-paid model evidence.
+    try:
+        trace = json.loads((root / "trace.json").read_text())
+        if not isinstance(trace, dict):
+            raise ValueError("Trace receipt must be an object")
+        if trace.get("status") == "running":
+            trace = {**trace, "status": "interrupted"}
+    except (OSError, ValueError) as exc:
+        trace = {"status": "unavailable", "errors": [type(exc).__name__]}
     result = {"run_id": run_id, "status": status, "error": error,
               "implementation_sha256": implementation,
+              "trace": trace,
               "manifest_sha256": binding, "elapsed_s": elapsed,
               "gpu": "H200", "gpu_cost_estimate_usd": elapsed * .001261,
               "compute_cost_upper_estimate_usd": elapsed * (.001261 + 8*.0000131 + 64*.00000222),
@@ -214,6 +224,23 @@ def execute(manifest: dict, commit) -> dict:
 
 
 def worker(root: Path) -> None:
+    from events.flora_trace import FloraTrace
+    manifest = json.loads((root / "manifest.json").read_text())
+    with FloraTrace(root, manifest) as trace, trace.instrument(), trace.span("worker"):
+        _worker(root)
+    # The final checkpoint and link must be committed after the SDK finishes.
+    import modal
+    try:
+        modal.Volume.from_name("argus-flora-research-evidence").commit()
+    except Exception as exc:
+        # The supervising execute() commits again before writing the paid receipt.
+        # A telemetry-only final flush cannot turn successful inference into failure.
+        trace.failed(exc)
+        trace.receipt["volume_commit"] = "deferred_to_supervisor"
+        trace.retain()
+
+
+def _worker(root: Path) -> None:
     import importlib.metadata
     import modal
     volume = modal.Volume.from_name("argus-flora-research-evidence")

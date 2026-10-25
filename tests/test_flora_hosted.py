@@ -163,3 +163,54 @@ def test_collect_existing_call_is_idempotent_and_resumes_evidence_transfer(tmp_p
     assert (tmp_path / 'run.artifacts/result.json').read_bytes() == payload
     with pytest.raises(ValueError, match='receipt changed'):
         flora_hosted.retain_result(source, {**result, 'status': 'failed'}, forbidden)
+
+
+@pytest.mark.parametrize("telemetry, error", [("{truncated", "JSONDecodeError"), ("[]", "ValueError")])
+def test_malformed_trace_does_not_hide_paid_output_receipt(tmp_path, monkeypatch, telemetry, error):
+    from events.flora import MODELS
+    monkeypatch.setattr(flora_hosted, "EVIDENCE_ROOT", tmp_path)
+    manifest = {"run_id": "trace-failure", "stage": "caption", "use": "noncommercial_research",
+                "max_num_seqs": 1, "requests": [{"models": MODELS, "videos": [], "video_sha256": []}],
+                "implementation_sha256": {
+                    path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in Path(flora_hosted.__file__).parent.glob("flora*.py")}}
+    root = tmp_path / "runs" / manifest["run_id"]
+    paid = b'{"caption": "Move the cup."}'
+    class Process:
+        pid = 123
+        def __init__(self, command, **kwargs):
+            self.worker = command[0] != "nvidia-smi"
+        def wait(self, **kwargs):
+            if self.worker:
+                (root / "paid.json").write_bytes(paid)
+                (root / "trace.json").write_text(telemetry)
+            return 0
+        def terminate(self):
+            pass
+    monkeypatch.setattr(flora_hosted.subprocess, "Popen", Process)
+    monkeypatch.setattr(flora_hosted.os, "killpg", lambda *args: None)
+    result = flora_hosted.execute(manifest, lambda: None)
+    assert result["status"] == "complete"
+    assert result["trace"] == {"status": "unavailable", "errors": [error]}
+    assert result["files"]["paid.json"] == hashlib.sha256(paid).hexdigest()
+    assert result["files"]["trace.json"] == hashlib.sha256(telemetry.encode()).hexdigest()
+    assert json.loads((root / "receipt.json").read_text()) == result
+
+
+def test_telemetry_final_commit_defers_to_supervisor_without_failing_paid_worker(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    monkeypatch.setitem(sys.modules, "waddle", SimpleNamespace())
+    def offline():
+        raise ConnectionError("sensitive transport details")
+    monkeypatch.setitem(sys.modules, "modal", SimpleNamespace(
+        Volume=SimpleNamespace(from_name=lambda name: SimpleNamespace(commit=offline))))
+    manifest = {"run_id": "commit-failure", "stage": "caption"}
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    monkeypatch.setattr(flora_hosted, "_worker", lambda root: (root / "paid.json").write_text("paid"))
+    flora_hosted.worker(tmp_path)
+    assert (tmp_path / "paid.json").read_text() == "paid"
+    receipt = json.loads((tmp_path / "trace.json").read_text())
+    assert receipt["volume_commit"] == "deferred_to_supervisor"
+    assert "ConnectionError" in receipt["errors"]
+    assert "sensitive" not in json.dumps(receipt)

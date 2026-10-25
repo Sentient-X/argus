@@ -4,7 +4,11 @@ Run with the pinned Modal CLI, separate from Argus's CPU environment.
 Weights are prefetched on CPU; GPU calls have no automatic retries.
 """
 from pathlib import Path
+from events.flora_trace import sdk_source
+from events.flora_journal import input_digest
 import modal
+
+waddle_source, waddle_files = sdk_source()
 
 APP_NAME = "argus-flora-research"
 app = modal.App(APP_NAME)
@@ -15,7 +19,9 @@ ENV = {"HF_HOME": "/models/huggingface", "FLORA_MODEL_CACHE": "/models/flora",
        "VLLM_CACHE_ROOT": "/models/vllm", "TRITON_CACHE_DIR": "/models/triton",
        "TORCHINDUCTOR_CACHE_DIR": "/models/torchinductor",
        "HF_XET_HIGH_PERFORMANCE": "1", "TOKENIZERS_PARALLELISM": "false",
-       "VLLM_LOG_STATS_INTERVAL": "1", "PYTHONPATH": "/opt/argus"}
+       "VLLM_LOG_STATS_INTERVAL": "1", "PYTHONPATH": "/opt/argus:/opt/waddle",
+       "FLORA_WADDLE_SOURCE": "/opt/waddle/waddle",
+       "FLORA_WADDLE_SHA256": input_digest(waddle_files)}
 source = Path(__file__).resolve().parent
 cpu_image = (modal.Image.debian_slim(python_version="3.12")
              .uv_pip_install("huggingface-hub==1.33.0")
@@ -24,9 +30,15 @@ cpu_image = (modal.Image.debian_slim(python_version="3.12")
 gpu_image = (modal.Image.from_registry("nvidia/cuda:12.9.0-devel-ubuntu22.04", add_python="3.12")
              .entrypoint([]).apt_install("ffmpeg", "libgl1", "libglib2.0-0")
              .uv_pip_install("vllm==0.24.0", "transformers==5.8.1", "peft==0.18.1",
-                             "av==16.0.1", "decord==0.6.0", "qwen-vl-utils==0.0.14")
+                             "av==16.0.1", "decord==0.6.0", "qwen-vl-utils==0.0.14",
+                             "duckdb==1.5.4", "psutil==7.2.2", "nvidia-ml-py==13.610.43")
              .env(ENV).add_local_dir(source, "/opt/argus/events")
              .add_local_dir(source.parent / "label", "/opt/argus/label"))
+
+# Ship only explicitly hashed SDK source files; no private clone or credentials.
+for name in waddle_files:
+    cpu_image = cpu_image.add_local_file(waddle_source / name, f"/opt/waddle/waddle/{name}")
+    gpu_image = gpu_image.add_local_file(waddle_source / name, f"/opt/waddle/waddle/{name}")
 
 @app.function(image=cpu_image, volumes={"/models": cache}, timeout=3600,
               cpu=(4, 4), memory=(16384, 16384), retries=0, max_containers=1, scaledown_window=2)
@@ -78,7 +90,11 @@ def inspect(manifest: dict):
     def measured():
         started = time.time()
         try:
-            result = _inspect(manifest)
+            from events.flora_trace import FloraTrace
+            with FloraTrace(root / "trace", manifest, phase="admission") as trace:
+                with trace.instrument(), trace.span("input.admission"):
+                    result = _inspect(manifest)
+            evidence.commit()
         except BaseException as exc:
             _save(root / "failure.json", {"started_at_unix": started,
                 "ended_at_unix": time.time(), "error": str(exc)})
@@ -86,7 +102,7 @@ def inspect(manifest: dict):
             raise
         ended = time.time()
         return {"result": result, "started_at_unix": started, "ended_at_unix": ended,
-                "elapsed_s": ended - started,
+                "elapsed_s": ended - started, "trace": trace.receipt,
                 "resources": {"cpu": 4, "memory_gib": 16},
                 "compute_cost_estimate_usd": (ended - started) * (4*.0000131 + 16*.00000222),
                 "cost_note": "CPU and memory list-price estimate; startup and storage separate."}
@@ -192,6 +208,7 @@ def main(prefetch_only: bool = False, manifest: str = "", deployed: bool = False
         if request["stage"] == "caption-session":
             from events.flora_hosted import caption_batches
             caption_batches(request)
+        request["telemetry_sdk_sha256"] = input_digest(waddle_files)
         request["implementation_sha256"] = {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
             for path in source.glob("flora*.py")}

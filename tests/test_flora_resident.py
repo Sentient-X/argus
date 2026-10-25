@@ -236,3 +236,46 @@ def test_stream_refuses_oversize_array_cache_before_engine_or_allocation(residen
         list(flora.caption_stream(chunks, flora.ResidentCaptionSession()))
     assert calls["engine"] == calls["generate"] == 0
     assert not (chunks[0].journal.root / "000000.intent.json").exists()
+
+
+def test_automatic_trace_keeps_paid_cache_identity_and_resident_outputs(resident_work):
+    """Real local Waddle spool around the actual caption stream; no model/GPU claim."""
+    pytest.importorskip("waddle")
+    import duckdb
+    import hashlib
+    from events.flora_trace import FloraTrace
+    root, calls, cache = resident_work
+    first, second = cache("traced-first"), cache("traced-second")
+    manifests = {directory: (directory / "cache.json").read_bytes()
+                 for _, directory in (first, second)}
+    source_sha = hashlib.sha256(Path(flora.__file__).read_bytes()).hexdigest()
+    original_prepare, original_load = flora._prepare_caption_many, flora.load_engine
+    chunks = [flora.CaptionChunk(requests, root / f"results-{index}",
+              GenerationJournal(root / f"journal-{index}", str(index)), directory)
+              for index, (requests, directory) in enumerate((first, second))]
+    trace_root = root / "trace"
+    with FloraTrace(trace_root, {"run_id": "local-boundary", "stage": "caption-session"}) as trace:
+        with trace.instrument(), trace.span("worker"):
+            results = list(flora.caption_stream(chunks, flora.ResidentCaptionSession(max_chunks=2)))
+    assert trace.receipt["status"] == "completed", trace.failures
+    assert calls["engine"] == 1 and calls["generate"] == 2
+    assert len(results) == 2
+    assert flora._prepare_caption_many is original_prepare and flora.load_engine is original_load
+    assert hashlib.sha256(Path(flora.__file__).read_bytes()).hexdigest() == source_sha
+    assert all((directory / "cache.json").read_bytes() == before
+               for directory, before in manifests.items())
+    with duckdb.connect(str(trace_root / "waddle.duckdb")) as db:
+        spans = [json.loads(row[0]) for row in db.execute(
+            "SELECT payload FROM run_records WHERE record_type = 'timing'").fetchall()]
+        assert db.execute("SELECT count(*) FROM metrics WHERE key LIKE 'system/%'").fetchone()[0] > 0
+    terminal = [span for span in spans if span["status"] == "completed"]
+    names = [span["name"] for span in terminal]
+    assert names.count("model.generate") == 2
+    assert names.count("model.load") == 1
+    assert names.count("input.cache_read") == 2
+    assert names.count("input.wait") == 1
+    assert "output.journal_write" in names
+    worker = next(span for span in terminal if span["name"] == "worker")
+    prepared = [span for span in terminal if span["name"] == "input.prepare"]
+    assert len({span["thread_id"] for span in prepared}) == 2
+    assert all(span["parent_span_id"] == worker["span_id"] for span in prepared)

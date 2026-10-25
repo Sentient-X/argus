@@ -290,3 +290,44 @@ and all caption/reward contracts, then writes one `<episode>/result.json` with t
 schema. It refuses failed batches, missing/foreign episodes, modified intervals, invalid rewards
 and overwritten outputs. It makes no model calls. Retained failures require explicit recovery;
 changing a failed receipt to claim success is not a recovery mechanism.
+
+### Automatic run traces
+
+Hosted CPU admission and GPU workers now spool Waddle stage spans and background
+CPU, memory, GPU and I/O samples into the existing Modal evidence volume. Caption
+spans cover native preparation, prepared-cache reads, successor waits, engine load,
+generation and durable journal writes. The preparation thread carries its parent
+span across episodes. These adapters leave `flora_vllm.py` unchanged, so existing
+paid preparation certificates still bind the exact same implementation bytes.
+
+Before importing or deploying `events.flora_modal`, select the SDK source from the
+same reviewed SentientX revision as the hosted trace reader:
+
+```bash
+export FLORA_WADDLE_SOURCE=/absolute/path/to/glued/autonomy/waddle/waddle
+uvx --from modal==1.5.2 modal deploy events.flora_modal
+```
+
+The image copies only enumerated Python SDK files and `py.typed`, hashing the file
+map into `FLORA_WADDLE_SHA256` and the submitted manifest. It does not clone a
+private repository or copy credentials. Dependencies are pinned to DuckDB 1.5.4,
+psutil 7.2.2 and NVIDIA's NVML binding 13.610.43. A missing or incompatible SDK
+selection fails before image dispatch. Runtime telemetry failure is best-effort:
+`trace.json` records its state without changing, retrying or discarding captions.
+
+Each GPU run retains `waddle.duckdb` and `trace.json` alongside its paid results;
+the final receipt binds their hashes and includes the Waddle run link identity.
+The run ID is UUID5 over `argus-flora:<flora-run-id>:worker` in the URL namespace;
+admission uses the `admission` suffix and a separate spool under its evidence
+folder. The SDK finishes and checkpoints the spool before final evidence hashing.
+A deadline kill can retain a WAL and open spans: they represent interrupted work,
+not completed generation. Collect the existing call and retain every receipt file.
+
+No cloud upload is enabled by this integration alone. The existing Waddle hosted
+sync contract remains available when the process has `SX_WADDLE_URL`,
+`SX_PROJECT_ID` and its project-scoped `SX_API_KEY`; credentials are never bundled
+into the image. A retained spool can also be read or imported through Waddle's
+existing tooling. Local fake-generation tests establish the producer and cache
+compatibility boundary; they do not establish live Modal instrumentation,
+caption quality, GPU saturation or a lower video-hour cost. No new GPU run was
+launched to qualify this tracing change.
