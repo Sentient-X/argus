@@ -1,0 +1,4989 @@
+{
+  "schema": "argus.flora.quality-evidence/v1",
+  "date": "2026-10-22",
+  "scope": "Development quality pilot and bounded Modal runtime qualification; no SOTA or parity claim.",
+  "source_seconds_distinct": 101.8,
+  "caption_session_variant_source_seconds": 292.23333333333335,
+  "limits": [
+    "Development cohort; no held-out or SOTA claim.",
+    "Fixed-interval Flora captions and imported native segmentation are separate systems.",
+    "Semantic verdicts use the existing WGO text-only judge protocol.",
+    "Output-recorded video digests match the cohort for: argus_astra, argus_astra_flora, argus_flora_vllm, argus_sol61, argus_sol61_flora, flora_tempseg, flora_tempseg_caption. See per-episode video_bindings.",
+    "Outputs without video digests rely on the pinned qualification manifest for: argus. See per-episode video_bindings.",
+    "Three development episodes, not the held-out WGO split.",
+    "Reward cohort is score-stratified; no frontier reward baseline, dense-label evaluation or ranking proof.",
+    "GPU utilization samples are one-second observations; dollars are list-price estimates, not invoices."
+  ],
+  "caption_session": {
+    "run_id": "paired-resident-caption-v2",
+    "receipt_path": "/Users/satyamtiwary/Documents/robotic-things/argus/data/flora-qualification/paired-resident-caption-v2.receipt.json",
+    "status": "complete",
+    "error": null,
+    "stage": "caption-session",
+    "max_num_seqs": 16,
+    "episodes": [
+      "robointer_droid_000013",
+      "galaxea_049",
+      "homer_33",
+      "robointer_droid_000013",
+      "homer_33",
+      "robointer_droid_000013",
+      "galaxea_049",
+      "homer_33"
+    ],
+    "supplied_intervals": 76,
+    "cohort_sha256": "27028849635852572598fb0c866e728d928bff6cc44ea7068d91650129590eae",
+    "worker_elapsed_s": 511.39090847969055,
+    "gpu_cost_estimate_usd": 0.6448639355928898,
+    "compute_cost_upper_estimate_usd": 0.7711161230783558,
+    "retained_generations": 3,
+    "unsettled_generations": [],
+    "phases": {
+      "observed_monitor_to_first_generation_s": 376.37847232818604,
+      "prepare_wall_s": 132.991654611,
+      "engine_load_wall_s": 238.72297428700003,
+      "processor_parity_wall_s": 2.434166220999998,
+      "vllm_weight_loading_s": 50.32672,
+      "vllm_engine_init_profile_kv_warmup_s": 140.77,
+      "vllm_compilation_in_engine_init_s": 56.53,
+      "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+    },
+    "inference": {
+      "scopes": [
+        "vllm_generate_excluding_journal"
+      ],
+      "seconds": 63.46744143700005,
+      "requests": 76,
+      "output_tokens": 1309,
+      "requests_per_second": 1.1974643735314303,
+      "output_tokens_per_second": 20.624748223061083,
+      "gpu": {
+        "samples": 64,
+        "gpu_util_percent": {
+          "mean": 64.953125,
+          "p50": 100.0,
+          "p95": 100.0,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 22.234375,
+          "p50": 30.0,
+          "p95": 41.24999999999997,
+          "max": 87.0
+        },
+        "memory_used_mib": {
+          "mean": 128802.28125,
+          "p50": 131475.0,
+          "p95": 131475.0,
+          "max": 131475.0
+        },
+        "power_w": {
+          "mean": 482.9221875,
+          "p50": 686.3900000000001,
+          "p95": 699.4739999999999,
+          "max": 702.43
+        }
+      }
+    },
+    "whole_worker_gpu": {
+      "samples": 508,
+      "gpu_util_percent": {
+        "mean": 10.366141732283465,
+        "p50": 0.0,
+        "p95": 100.0,
+        "max": 100.0
+      },
+      "memory_util_percent": {
+        "mean": 4.179133858267717,
+        "p50": 0.0,
+        "p95": 31.0,
+        "max": 90.0
+      },
+      "memory_used_mib": {
+        "mean": 55458.746062992126,
+        "p50": 55651.0,
+        "p95": 131475.0,
+        "max": 131475.0
+      },
+      "power_w": {
+        "mean": 161.41714566929136,
+        "p50": 120.9,
+        "p95": 690.8684999999999,
+        "max": 702.43
+      }
+    },
+    "generation_span_gpu": {
+      "samples": 123,
+      "gpu_util_percent": {
+        "mean": 33.796747967479675,
+        "p50": 0.0,
+        "p95": 100.0,
+        "max": 100.0
+      },
+      "memory_util_percent": {
+        "mean": 11.56910569105691,
+        "p50": 0.0,
+        "p95": 35.89999999999999,
+        "max": 87.0
+      },
+      "memory_used_mib": {
+        "mean": 130084.31707317074,
+        "p50": 131475.0,
+        "p95": 131475.0,
+        "max": 131475.0
+      },
+      "power_w": {
+        "mean": 311.3568292682927,
+        "p50": 123.56,
+        "p95": 695.757,
+        "max": 702.43
+      }
+    },
+    "generations": [
+      {
+        "inference_wall_s": 32.09501822000004,
+        "requests": 16,
+        "started_at_unix": 1792660105.5144722,
+        "ended_at_unix": 1792660137.6094964,
+        "prompt_tokens": 100444,
+        "generated_tokens": 322,
+        "generated_tokens_per_second": 10.032709680761153,
+        "max_num_seqs": 16,
+        "generation_replayed": false,
+        "processor_parity_reused": true,
+        "processor_parity_wall_s": 1.5308941839999761,
+        "episodes": 3,
+        "prepared_cache_used": true,
+        "resident_engine_reused": false,
+        "resident_chunk": 1,
+        "prepare_wall_s": 132.991654611,
+        "engine_load_wall_s": 238.72297428700003,
+        "total_wall_s": 408.191311979,
+        "stage": "caption",
+        "scope": "vllm_generate_excluding_journal",
+        "output_tokens": 322,
+        "seconds": 32.09501822000004,
+        "replayed": false,
+        "requests_per_second": 0.49851973568999514,
+        "output_tokens_per_second": 10.032709680761153,
+        "gpu": {
+          "samples": 32,
+          "gpu_util_percent": {
+            "mean": 30.625,
+            "p50": 0.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 11.28125,
+            "p50": 0.0,
+            "p95": 32.9,
+            "max": 87.0
+          },
+          "memory_used_mib": {
+            "mean": 126129.5625,
+            "p50": 123641.0,
+            "p95": 131475.0,
+            "max": 131475.0
+          },
+          "power_w": {
+            "mean": 298.549375,
+            "p50": 121.205,
+            "p95": 697.5545,
+            "max": 700.72
+          }
+        }
+      },
+      {
+        "inference_wall_s": 12.685534908000022,
+        "requests": 24,
+        "started_at_unix": 1792660165.2031708,
+        "ended_at_unix": 1792660177.8887103,
+        "prompt_tokens": 126711,
+        "generated_tokens": 405,
+        "generated_tokens_per_second": 31.926127115427374,
+        "max_num_seqs": 16,
+        "generation_replayed": false,
+        "processor_parity_reused": true,
+        "processor_parity_wall_s": 1.6906922239999744,
+        "episodes": 2,
+        "prepared_cache_used": true,
+        "resident_engine_reused": true,
+        "resident_chunk": 2,
+        "prepare_wall_s": 21.68164886599999,
+        "engine_load_wall_s": 0.024116390000017418,
+        "total_wall_s": 39.19189848900004,
+        "stage": "caption",
+        "scope": "vllm_generate_excluding_journal",
+        "output_tokens": 405,
+        "seconds": 12.685534908000022,
+        "replayed": false,
+        "requests_per_second": 1.8919186438771776,
+        "output_tokens_per_second": 31.926127115427374,
+        "gpu": {
+          "samples": 13,
+          "gpu_util_percent": {
+            "mean": 98.23076923076923,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 31.923076923076923,
+            "p50": 30.0,
+            "p95": 38.99999999999999,
+            "max": 42.0
+          },
+          "memory_used_mib": {
+            "mean": 131475.0,
+            "p50": 131475.0,
+            "p95": 131475.0,
+            "max": 131475.0
+          },
+          "power_w": {
+            "mean": 665.5746153846153,
+            "p50": 693.51,
+            "p95": 695.7180000000001,
+            "max": 695.73
+          }
+        }
+      },
+      {
+        "inference_wall_s": 18.686888308999983,
+        "requests": 36,
+        "started_at_unix": 1792660210.4971466,
+        "ended_at_unix": 1792660229.1840403,
+        "prompt_tokens": 187668,
+        "generated_tokens": 582,
+        "generated_tokens_per_second": 31.144832161259135,
+        "max_num_seqs": 16,
+        "generation_replayed": false,
+        "processor_parity_reused": true,
+        "processor_parity_wall_s": 2.434166220999998,
+        "episodes": 3,
+        "prepared_cache_used": true,
+        "resident_engine_reused": true,
+        "resident_chunk": 3,
+        "prepare_wall_s": 25.36567583499999,
+        "engine_load_wall_s": 0.02349642000001495,
+        "total_wall_s": 50.399119882000036,
+        "stage": "caption",
+        "scope": "vllm_generate_excluding_journal",
+        "output_tokens": 582,
+        "seconds": 18.686888308999983,
+        "replayed": false,
+        "requests_per_second": 1.9264844635830394,
+        "output_tokens_per_second": 31.144832161259135,
+        "gpu": {
+          "samples": 19,
+          "gpu_util_percent": {
+            "mean": 100.0,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 34.05263157894737,
+            "p50": 31.0,
+            "p95": 44.39999999999995,
+            "max": 66.0
+          },
+          "memory_used_mib": {
+            "mean": 131475.0,
+            "p50": 131475.0,
+            "p95": 131475.0,
+            "max": 131475.0
+          },
+          "power_w": {
+            "mean": 668.4721052631579,
+            "p50": 691.94,
+            "p95": 700.81,
+            "max": 702.43
+          }
+        }
+      }
+    ],
+    "warnings": [],
+    "receipt": {
+      "path": "paired-resident-caption-v2.receipt.json",
+      "sha256": "2efeadd784e2e3073e8ddb07113c7e6ce0a007000fc35a6ab3f3ae6bd1be7153"
+    },
+    "implementation_sha256": {
+      "flora_journal.py": "96806f8dba4997ed3cbdf5b527aa7989948e739907df86bbb4c02952d55625ec",
+      "flora.py": "93d2fb7ab24c5bee7fc16d6c1ab6065d1a47d385415b3bf99a7c4fc9e2c7bbb4",
+      "flora_hosted.py": "8da2b3794edca866d7ddd98e0bd745b6dce654eb76cd7960486bcb6b1ac5fc87",
+      "flora_vllm.py": "4013edd5951650c9052b0be513c726e233c906cc59dab1021a0623552c3d1326",
+      "flora_worker.py": "749af0b869affd3707d8b3f1c172ec6abf0299068e4eff4952525fb79451d884",
+      "flora_modal.py": "b4331b8e4761744cbee8a9efdf30b7be9a2c7f1e83a0b9b5adcca49de59b9308",
+      "flora_reward_batch.py": "317621e99f69691a195d17d3343dcf76ca83584fd22ff78b3bab2662ac6bf15c",
+      "flora_segment.py": "9a5257a345c11e97a7a12ddb9e676f1e2decc19a29efeea45788246f36250b00",
+      "flora_import.py": "3942e9aae7f4a87c67fd8aae04cf876a901f9e20e93b9b52c0ccc59a0a521544"
+    }
+  },
+  "reward_run": {
+    "run_id": "roboreward-outcome-v2",
+    "receipt_path": "/Users/satyamtiwary/Documents/robotic-things/argus/data/flora-qualification/roboreward-outcome-v2.receipt.json",
+    "status": "complete",
+    "error": null,
+    "stage": "reward-outcome",
+    "max_num_seqs": 8,
+    "episodes": [
+      "roboreward-test-002f33adcb16dd7b",
+      "roboreward-test-00687fdff14dfb3c",
+      "roboreward-test-00a1e91670bb1088",
+      "roboreward-test-00bedee72a405eb8",
+      "roboreward-test-00e7e73665c8ff22",
+      "roboreward-test-0139f114406317af",
+      "roboreward-test-01e62a984a03038f",
+      "roboreward-test-020ecf2f63e5c218",
+      "roboreward-test-02258cbe7cc95107",
+      "roboreward-test-02bb4a78669fd612",
+      "roboreward-test-0086e86dce660f56",
+      "roboreward-test-010ad93e4c3f03b1",
+      "roboreward-test-016056730fb6e63d",
+      "roboreward-test-01ce18df55df313a",
+      "roboreward-test-02652f028226d15b",
+      "roboreward-test-0283ec00dbfc2a3a",
+      "roboreward-test-029b6a5f5f29267b",
+      "roboreward-test-02d53fdc982e089d",
+      "roboreward-test-03301096db4c8480",
+      "roboreward-test-00cbc90068bbabed",
+      "roboreward-test-01148359cc660bf1",
+      "roboreward-test-021484271e3b6028",
+      "roboreward-test-022c464200dbb22b",
+      "roboreward-test-02a9ba32617cd04c",
+      "roboreward-test-034344673cd95d72",
+      "roboreward-test-036dd0966c4d78f3",
+      "roboreward-test-04937b8e47f56013",
+      "roboreward-test-01c99b1f71ebe2ec",
+      "roboreward-test-01ca23480c77a21f",
+      "roboreward-test-0288edc61dacea77",
+      "roboreward-test-02bf158f9b5dfd60",
+      "roboreward-test-02c3c71f682ef392",
+      "roboreward-test-0302729643c25c4b",
+      "roboreward-test-039a364498e10407",
+      "roboreward-test-041cea519fcad8d2",
+      "roboreward-test-042c0fa14c962130",
+      "roboreward-test-050c9a147c9b8356",
+      "roboreward-test-0022b2fe236b529d",
+      "roboreward-test-004c69891c3f15b2",
+      "roboreward-test-01d01fe40e3321b4",
+      "roboreward-test-01f3efc18d29d64f",
+      "roboreward-test-0262f0d1275ca8b1",
+      "roboreward-test-0393ab3ad59f8df6",
+      "roboreward-test-042963271a90a6e3",
+      "roboreward-test-04456ce344c3b820",
+      "roboreward-test-04598c8bfe9495d8",
+      "roboreward-test-0475c91418c6973b"
+    ],
+    "supplied_intervals": 0,
+    "cohort_sha256": "81be2bd36047fb4a13e99ecfe9eeafe4f7c9c7f020106c6b00893e9075ad82b0",
+    "worker_elapsed_s": 254.37653613090515,
+    "gpu_cost_estimate_usd": 0.3207688120610714,
+    "compute_cost_upper_estimate_usd": 0.3835692913010692,
+    "retained_generations": 6,
+    "unsettled_generations": [],
+    "phases": {
+      "observed_monitor_to_first_generation_s": 191.26636147499084,
+      "vllm_weight_loading_s": 28.832008,
+      "vllm_engine_init_profile_kv_warmup_s": 95.56,
+      "vllm_compilation_in_engine_init_s": 10.27,
+      "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+    },
+    "inference": {
+      "scopes": [
+        "vllm_generate_excluding_journal"
+      ],
+      "seconds": 38.664268951000025,
+      "requests": 47,
+      "output_tokens": 235,
+      "requests_per_second": 1.2155926201414544,
+      "output_tokens_per_second": 6.077963100707271,
+      "gpu": {
+        "samples": 39,
+        "gpu_util_percent": {
+          "mean": 38.07692307692308,
+          "p50": 0.0,
+          "p95": 100.0,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 12.692307692307692,
+          "p50": 0.0,
+          "p95": 34.1,
+          "max": 39.0
+        },
+        "memory_used_mib": {
+          "mean": 125387.8717948718,
+          "p50": 123653.0,
+          "p95": 128289.0,
+          "max": 128289.0
+        },
+        "power_w": {
+          "mean": 293.3917948717949,
+          "p50": 117.77,
+          "p95": 695.122,
+          "max": 704.37
+        }
+      }
+    },
+    "whole_worker_gpu": {
+      "samples": 251,
+      "gpu_util_percent": {
+        "mean": 9.848605577689243,
+        "p50": 0.0,
+        "p95": 100.0,
+        "max": 100.0
+      },
+      "memory_util_percent": {
+        "mean": 3.812749003984064,
+        "p50": 0.0,
+        "p95": 33.0,
+        "max": 87.0
+      },
+      "memory_used_mib": {
+        "mean": 58070.123505976095,
+        "p50": 57525.0,
+        "p95": 128289.0,
+        "max": 128289.0
+      },
+      "power_w": {
+        "mean": 153.12605577689243,
+        "p50": 117.74,
+        "p95": 455.88,
+        "max": 704.37
+      }
+    },
+    "generation_span_gpu": {
+      "samples": 54,
+      "gpu_util_percent": {
+        "mean": 28.462962962962962,
+        "p50": 0.0,
+        "p95": 100.0,
+        "max": 100.0
+      },
+      "memory_util_percent": {
+        "mean": 9.87037037037037,
+        "p50": 0.0,
+        "p95": 34.349999999999994,
+        "max": 39.0
+      },
+      "memory_used_mib": {
+        "mean": 126103.29629629629,
+        "p50": 127477.0,
+        "p95": 128289.0,
+        "max": 128289.0
+      },
+      "power_w": {
+        "mean": 270.4272222222222,
+        "p50": 120.0,
+        "p95": 692.5985,
+        "max": 704.37
+      }
+    },
+    "generations": [
+      {
+        "stage": "outcome",
+        "generation": 0,
+        "replayed": false,
+        "requests": 8,
+        "output_tokens": 40,
+        "seconds": 25.553861711000025,
+        "journaled_seconds": 27.652823850000004,
+        "started_at_unix": 1792660607.7083614,
+        "ended_at_unix": 1792660633.2622278,
+        "output_tokens_per_second": 1.565321142157603,
+        "scope": "vllm_generate_excluding_journal",
+        "requests_per_second": 0.3130642284315206,
+        "gpu": {
+          "samples": 26,
+          "gpu_util_percent": {
+            "mean": 11.538461538461538,
+            "p50": 0.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 3.8461538461538463,
+            "p50": 0.0,
+            "p95": 33.5,
+            "max": 34.0
+          },
+          "memory_used_mib": {
+            "mean": 124031.69230769231,
+            "p50": 123653.0,
+            "p95": 127070.5,
+            "max": 127477.0
+          },
+          "power_w": {
+            "mean": 164.57,
+            "p50": 117.75,
+            "p95": 453.3025,
+            "max": 694.88
+          }
+        }
+      },
+      {
+        "stage": "outcome",
+        "generation": 1,
+        "replayed": false,
+        "requests": 8,
+        "output_tokens": 40,
+        "seconds": 2.571336229999986,
+        "journaled_seconds": 4.307585839000012,
+        "started_at_unix": 1792660636.044701,
+        "ended_at_unix": 1792660638.6160421,
+        "output_tokens_per_second": 15.556114184258284,
+        "scope": "vllm_generate_excluding_journal",
+        "requests_per_second": 3.1112228368516566,
+        "gpu": {
+          "samples": 2,
+          "gpu_util_percent": {
+            "mean": 100.0,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 33.5,
+            "p50": 33.5,
+            "p95": 34.85,
+            "max": 35.0
+          },
+          "memory_used_mib": {
+            "mean": 127479.0,
+            "p50": 127479.0,
+            "p95": 127479.0,
+            "max": 127479.0
+          },
+          "power_w": {
+            "mean": 571.845,
+            "p50": 571.845,
+            "p95": 677.2125,
+            "max": 688.92
+          }
+        }
+      },
+      {
+        "stage": "outcome",
+        "generation": 2,
+        "replayed": false,
+        "requests": 8,
+        "output_tokens": 40,
+        "seconds": 2.6726708150000036,
+        "journaled_seconds": 4.870327806000006,
+        "started_at_unix": 1792660641.6328204,
+        "ended_at_unix": 1792660644.3054957,
+        "output_tokens_per_second": 14.966302537336588,
+        "scope": "vllm_generate_excluding_journal",
+        "requests_per_second": 2.9932605074673178,
+        "gpu": {
+          "samples": 3,
+          "gpu_util_percent": {
+            "mean": 66.66666666666667,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 21.0,
+            "p50": 31.0,
+            "p95": 31.9,
+            "max": 32.0
+          },
+          "memory_used_mib": {
+            "mean": 128015.0,
+            "p50": 128283.0,
+            "p95": 128283.0,
+            "max": 128283.0
+          },
+          "power_w": {
+            "mean": 484.66333333333336,
+            "p50": 629.78,
+            "p95": 696.9110000000001,
+            "max": 704.37
+          }
+        }
+      },
+      {
+        "stage": "outcome",
+        "generation": 3,
+        "replayed": false,
+        "requests": 8,
+        "output_tokens": 40,
+        "seconds": 2.637037011000018,
+        "journaled_seconds": 4.426783988000011,
+        "started_at_unix": 1792660647.2411513,
+        "ended_at_unix": 1792660649.8781931,
+        "output_tokens_per_second": 15.168539475610617,
+        "scope": "vllm_generate_excluding_journal",
+        "requests_per_second": 3.0337078951221232,
+        "gpu": {
+          "samples": 3,
+          "gpu_util_percent": {
+            "mean": 100.0,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 34.0,
+            "p50": 32.0,
+            "p95": 38.3,
+            "max": 39.0
+          },
+          "memory_used_mib": {
+            "mean": 128285.0,
+            "p50": 128283.0,
+            "p95": 128288.4,
+            "max": 128289.0
+          },
+          "power_w": {
+            "mean": 565.2833333333333,
+            "p50": 681.52,
+            "p95": 695.722,
+            "max": 697.3
+          }
+        }
+      },
+      {
+        "stage": "outcome",
+        "generation": 4,
+        "replayed": false,
+        "requests": 8,
+        "output_tokens": 40,
+        "seconds": 2.5849454330000015,
+        "journaled_seconds": 4.506136615999992,
+        "started_at_unix": 1792660652.901576,
+        "ended_at_unix": 1792660655.4865265,
+        "output_tokens_per_second": 15.47421446091314,
+        "scope": "vllm_generate_excluding_journal",
+        "requests_per_second": 3.094842892182628,
+        "gpu": {
+          "samples": 2,
+          "gpu_util_percent": {
+            "mean": 100.0,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 33.5,
+            "p50": 33.5,
+            "p95": 33.95,
+            "max": 34.0
+          },
+          "memory_used_mib": {
+            "mean": 128289.0,
+            "p50": 128289.0,
+            "p95": 128289.0,
+            "max": 128289.0
+          },
+          "power_w": {
+            "mean": 629.9549999999999,
+            "p50": 629.9549999999999,
+            "p95": 679.9994999999999,
+            "max": 685.56
+          }
+        }
+      },
+      {
+        "stage": "outcome",
+        "generation": 5,
+        "replayed": false,
+        "requests": 7,
+        "output_tokens": 35,
+        "seconds": 2.6444177509999918,
+        "journaled_seconds": 4.495462400000008,
+        "started_at_unix": 1792660658.4916945,
+        "ended_at_unix": 1792660661.1361167,
+        "output_tokens_per_second": 13.235427718167706,
+        "scope": "vllm_generate_excluding_journal",
+        "requests_per_second": 2.6470855436335414,
+        "gpu": {
+          "samples": 3,
+          "gpu_util_percent": {
+            "mean": 95.0,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 32.0,
+            "p50": 32.0,
+            "p95": 32.9,
+            "max": 33.0
+          },
+          "memory_used_mib": {
+            "mean": 128289.0,
+            "p50": 128289.0,
+            "p95": 128289.0,
+            "max": 128289.0
+          },
+          "power_w": {
+            "mean": 536.6733333333333,
+            "p50": 691.1,
+            "p95": 691.343,
+            "max": 691.37
+          }
+        }
+      }
+    ],
+    "warnings": [
+      "Some generation windows have fewer than five 1Hz GPU samples; short-window percentiles are weak evidence."
+    ],
+    "receipt": {
+      "path": "roboreward-outcome-v2.receipt.json",
+      "sha256": "d3f9de7ef10878fb70fad702f8cbd4e049e6aaf62f7d9961367d453a5cdd1c94"
+    },
+    "implementation_sha256": {
+      "flora_worker.py": "749af0b869affd3707d8b3f1c172ec6abf0299068e4eff4952525fb79451d884",
+      "flora_modal.py": "b4331b8e4761744cbee8a9efdf30b7be9a2c7f1e83a0b9b5adcca49de59b9308",
+      "flora_import.py": "3942e9aae7f4a87c67fd8aae04cf876a901f9e20e93b9b52c0ccc59a0a521544",
+      "flora_segment.py": "9a5257a345c11e97a7a12ddb9e676f1e2decc19a29efeea45788246f36250b00",
+      "flora_journal.py": "96806f8dba4997ed3cbdf5b527aa7989948e739907df86bbb4c02952d55625ec",
+      "flora_vllm.py": "4013edd5951650c9052b0be513c726e233c906cc59dab1021a0623552c3d1326",
+      "flora_reward_batch.py": "317621e99f69691a195d17d3343dcf76ca83584fd22ff78b3bab2662ac6bf15c",
+      "flora.py": "93d2fb7ab24c5bee7fc16d6c1ab6065d1a47d385415b3bf99a7c4fc9e2c7bbb4",
+      "flora_hosted.py": "8da2b3794edca866d7ddd98e0bd745b6dce654eb76cd7960486bcb6b1ac5fc87"
+    }
+  },
+  "reward_evaluation": {
+    "schema": "argus.flora.reward-evaluation/v1",
+    "run_id": "roboreward-outcome-v2",
+    "provenance": {
+      "receipt_sha256": "d3f9de7ef10878fb70fad702f8cbd4e049e6aaf62f7d9961367d453a5cdd1c94",
+      "frozen_plan_sha256": "d175155e454d0d64de2e44291b6b3302813b4dfa182f8a4bc91bbdb79494831b",
+      "cpu_admission_sha256": "393584dca32984f8368693198f55d8ba73e73ac5ec8fba4e660a4350cec831bf",
+      "evaluation_gold_sha256": "765f2b228a53271ffd244c3ce0cd98e399173491af3e9e939e17a7942ad22cc6",
+      "frozen_count": 50,
+      "admitted_count": 47,
+      "admission_failures": 3,
+      "replacements": 0,
+      "claim": "Partial frozen-cohort outcome qualification; no SOTA claim.",
+      "evaluator_sha256": "f41e13dd0400b870b89575b554abf6fdff5f00a9719a33653c4baf44afd0c1a6",
+      "model": {
+        "repo": "nvidia/Flora-Rewarder",
+        "revision": "7de68d22c4a9decec5ddb7f86ddcaee8f82d3367",
+        "weights_revision": "7de68d22c4a9decec5ddb7f86ddcaee8f82d3367"
+      },
+      "source": {
+        "repo": "teetone/RoboReward",
+        "revision": "469b9af76e8539e8d2ac553b081307738fd92ca5",
+        "split": "test",
+        "metadata_url": "https://huggingface.co/datasets/teetone/RoboReward/resolve/469b9af76e8539e8d2ac553b081307738fd92ca5/test/metadata.jsonl",
+        "metadata_sha256": "3901cea9a7981d2e2d9fde4225a4b2ff0ebf2f4af69fc96972a2cfbe557db0cd",
+        "metadata_bytes": 1337128,
+        "test_rows": 2831,
+        "label_counts": {
+          "1": 689,
+          "2": 641,
+          "3": 556,
+          "4": 418,
+          "5": 527
+        },
+        "license": "CC-BY-4.0",
+        "label_provenance": "Dataset card describes test split as fully human verified. gpt5_mini_check is not independent gold and is deliberately excluded from inference."
+      }
+    },
+    "coverage": {
+      "frozen": 50,
+      "admitted": 47,
+      "answered": 47,
+      "admission_failures": 3,
+      "fraction": 0.94
+    },
+    "selection": {
+      "kind": "score-stratified frozen cohort",
+      "frozen_per_label": {
+        "1": 10,
+        "2": 10,
+        "3": 10,
+        "4": 10,
+        "5": 10
+      },
+      "admitted_per_label": {
+        "1": 10,
+        "2": 9,
+        "3": 8,
+        "4": 10,
+        "5": 10
+      }
+    },
+    "answered_metrics": {
+      "count": 47,
+      "mae": 0.44680851063829785,
+      "accuracy": 0.7021276595744681,
+      "mae_times_100": 44.680851063829785
+    },
+    "per_label": {
+      "1": {
+        "count": 10,
+        "mae": 0.1,
+        "accuracy": 0.9
+      },
+      "2": {
+        "count": 9,
+        "mae": 0.5555555555555556,
+        "accuracy": 0.6666666666666666
+      },
+      "3": {
+        "count": 8,
+        "mae": 0.25,
+        "accuracy": 0.75
+      },
+      "4": {
+        "count": 10,
+        "mae": 1.2,
+        "accuracy": 0.3
+      },
+      "5": {
+        "count": 10,
+        "mae": 0.1,
+        "accuracy": 0.9
+      }
+    },
+    "confusion_matrix_gold_rows_predicted_columns": [
+      [
+        9,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        6,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        6,
+        2,
+        0
+      ],
+      [
+        2,
+        1,
+        2,
+        3,
+        2
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        9
+      ]
+    ],
+    "frozen_cohort_mae_bounds": [
+      0.42,
+      0.56
+    ],
+    "episodes": [
+      {
+        "id": "roboreward-test-002f33adcb16dd7b",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-00687fdff14dfb3c",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-00a1e91670bb1088",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-00bedee72a405eb8",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-00e7e73665c8ff22",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0139f114406317af",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-01e62a984a03038f",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-020ecf2f63e5c218",
+        "gold": 1,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02258cbe7cc95107",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02bb4a78669fd612",
+        "gold": 1,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0086e86dce660f56",
+        "gold": 2,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-010ad93e4c3f03b1",
+        "gold": 2,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-016056730fb6e63d",
+        "gold": 2,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-01ce18df55df313a",
+        "gold": 2,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02652f028226d15b",
+        "gold": 2,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0283ec00dbfc2a3a",
+        "gold": 2,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-029b6a5f5f29267b",
+        "gold": 2,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02d53fdc982e089d",
+        "gold": 2,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-03301096db4c8480",
+        "gold": 2,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0379bfa9dd20d412",
+        "gold": 2,
+        "prediction": null,
+        "admission_status": "unsupported",
+        "admission_error": "FloraError: combined Flora rewards require constant-rate native video; do not resample"
+      },
+      {
+        "id": "roboreward-test-00cbc90068bbabed",
+        "gold": 3,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-01148359cc660bf1",
+        "gold": 3,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-021484271e3b6028",
+        "gold": 3,
+        "prediction": 4,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-022c464200dbb22b",
+        "gold": 3,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02a9ba32617cd04c",
+        "gold": 3,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02c1e9ec38dd8116",
+        "gold": 3,
+        "prediction": null,
+        "admission_status": "unsupported",
+        "admission_error": "FloraError: combined Flora rewards require constant-rate native video; do not resample"
+      },
+      {
+        "id": "roboreward-test-034344673cd95d72",
+        "gold": 3,
+        "prediction": 4,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-036dd0966c4d78f3",
+        "gold": 3,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-04937b8e47f56013",
+        "gold": 3,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-04b0fcde53732ad6",
+        "gold": 3,
+        "prediction": null,
+        "admission_status": "unsupported",
+        "admission_error": "FloraError: combined Flora rewards require constant-rate native video; do not resample"
+      },
+      {
+        "id": "roboreward-test-01c99b1f71ebe2ec",
+        "gold": 4,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-01ca23480c77a21f",
+        "gold": 4,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0288edc61dacea77",
+        "gold": 4,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02bf158f9b5dfd60",
+        "gold": 4,
+        "prediction": 4,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-02c3c71f682ef392",
+        "gold": 4,
+        "prediction": 3,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0302729643c25c4b",
+        "gold": 4,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-039a364498e10407",
+        "gold": 4,
+        "prediction": 1,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-041cea519fcad8d2",
+        "gold": 4,
+        "prediction": 2,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-042c0fa14c962130",
+        "gold": 4,
+        "prediction": 4,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-050c9a147c9b8356",
+        "gold": 4,
+        "prediction": 4,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0022b2fe236b529d",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-004c69891c3f15b2",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-01d01fe40e3321b4",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-01f3efc18d29d64f",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0262f0d1275ca8b1",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0393ab3ad59f8df6",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-042963271a90a6e3",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-04456ce344c3b820",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-04598c8bfe9495d8",
+        "gold": 5,
+        "prediction": 5,
+        "admission_status": "admitted",
+        "admission_error": null
+      },
+      {
+        "id": "roboreward-test-0475c91418c6973b",
+        "gold": 5,
+        "prediction": 4,
+        "admission_status": "admitted",
+        "admission_error": null
+      }
+    ],
+    "limitations": [
+      "Score-stratified selection estimates this cohort, not dataset prevalence or its official headline score.",
+      "Answered metrics are conditional on CPU admission; failed admissions remain in the frozen denominator.",
+      "Missing-result bounds are identification bounds, not confidence intervals.",
+      "No population confidence claim: tasks and original trajectories can be correlated.",
+      "Outcome labels do not validate dense rewards, policy ranking, or SOTA."
+    ]
+  },
+  "references": {
+    "videodb": {
+      "status": "available",
+      "artifact": {
+        "path": "/Users/satyamtiwary/.cache/sx/wgo-bench/videodb-corrected-annotations.json",
+        "sha256": "abd00cb339c5e0603314331da1dfeee30c3203174077d9905549a5b369796e0e"
+      },
+      "judge": "google/gemini-3.5-flash",
+      "total_reference_segments": 534,
+      "source_provenance": {
+        "dataset": "VideoDB/WGO-Bench",
+        "upstream_revision": "9cfb7bb98d60a58319f4b3d7b41374eedfb7980c"
+      },
+      "systems": {
+        "argus": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.5,
+              "semantic_f1": 0.3333,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.5,
+              "semantic": 0.4167
+            },
+            "source_equal_macro": {
+              "segmentation": 0.5,
+              "semantic": 0.4167
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.5,
+                "semantic_f1": 0.25,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 1,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.1667,
+              "semantic_f1": 0.1667,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.3333,
+              "semantic": 0.3333
+            },
+            "source_equal_macro": {
+              "segmentation": 0.3333,
+              "semantic": 0.3333
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 4,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.6667,
+              "semantic_f1": 0.3333,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.8333,
+              "semantic": 0.4167
+            },
+            "source_equal_macro": {
+              "segmentation": 0.8333,
+              "semantic": 0.4167
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.5,
+                "semantic_f1": 0.25,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 2,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.3333,
+              "semantic_f1": 0.1667,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.6667,
+              "semantic": 0.3333
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6667,
+              "semantic": 0.3333
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          }
+        },
+        "argus_flora_vllm": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.5,
+              "semantic_f1": 0.3333,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.5,
+              "semantic": 0.4167
+            },
+            "source_equal_macro": {
+              "segmentation": 0.5,
+              "semantic": 0.4167
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.5,
+                "semantic_f1": 0.25,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 1,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.1667,
+              "semantic_f1": 0.1667,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.3333,
+              "semantic": 0.3333
+            },
+            "source_equal_macro": {
+              "segmentation": 0.3333,
+              "semantic": 0.3333
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 4,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.6667,
+              "semantic_f1": 0.5,
+              "caption_accuracy_on_temporal_matches": 0.75
+            },
+            "episode_macro": {
+              "segmentation": 0.8333,
+              "semantic": 0.75
+            },
+            "source_equal_macro": {
+              "segmentation": 0.8333,
+              "semantic": 0.75
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.5,
+                "semantic_f1": 0.25,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 4,
+              "matched": 2,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.3333,
+              "semantic_f1": 0.3333,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.6667,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6667,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          }
+        },
+        "argus_astra": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.3,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.125,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.3,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.125,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.3,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.125,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.3,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.7083
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.125,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          }
+        },
+        "argus_sol61": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.2069,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.08,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.2069,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.08,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.2069,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.08,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.2069,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6933
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.08,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          }
+        },
+        "argus_astra_flora": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.2,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.2,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.2,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.3,
+              "semantic_f1": 0.2,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7083,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.125,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          }
+        },
+        "argus_sol61_flora": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.1379,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.1379,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.1379,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 4,
+              "matched": 3,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.2069,
+              "semantic_f1": 0.1379,
+              "caption_accuracy_on_temporal_matches": 0.6667
+            },
+            "episode_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "source_equal_macro": {
+              "segmentation": 0.6933,
+              "semantic": 0.6667
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 1.0,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.08,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          }
+        },
+        "flora_tempseg_caption": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 2,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.1,
+              "semantic_f1": 0.0,
+              "caption_accuracy_on_temporal_matches": 0.0
+            },
+            "episode_macro": {
+              "segmentation": 0.2424,
+              "semantic": 0.0
+            },
+            "source_equal_macro": {
+              "segmentation": 0.2424,
+              "semantic": 0.0
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0606,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 0,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.0,
+              "semantic_f1": 0.0,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.0,
+              "semantic": 0.0
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0,
+              "semantic": 0.0
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 2,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.1,
+              "semantic_f1": 0.0,
+              "caption_accuracy_on_temporal_matches": 0.0
+            },
+            "episode_macro": {
+              "segmentation": 0.2424,
+              "semantic": 0.0
+            },
+            "source_equal_macro": {
+              "segmentation": 0.2424,
+              "semantic": 0.0
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0606,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 0,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.0,
+              "semantic_f1": 0.0,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.0,
+              "semantic": 0.0
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0,
+              "semantic": 0.0
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          }
+        },
+        "flora_tempseg": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 2,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.1,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.2424,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.2424,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0606,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 0,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.0,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.0,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 2,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.1,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.2424,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.2424,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0606,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 4,
+              "matched": 0,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.0,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.0,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 1,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "macrodata": {
+      "status": "available",
+      "artifact": {
+        "path": "/Users/satyamtiwary/Documents/robotic-things/argus/data/flora-qualification/macrodata-original-annotations.json",
+        "sha256": "9313c29d0a4c7997cf44e0cb8b201cd1acc27f77223e2ce64bb9a825f8914115"
+      },
+      "judge": "google/gemini-3.5-flash",
+      "total_reference_segments": 13,
+      "source_provenance": {
+        "dataset": "macrodata/WGO-Bench",
+        "upstream_revision": "9cfb7bb98d60a58319f4b3d7b41374eedfb7980c",
+        "selection": "Three fixed development cohort episodes; primary full reference has 100 episodes / 743 segments"
+      },
+      "systems": {
+        "argus": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 6,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.5714,
+              "semantic_f1": 0.4762,
+              "caption_accuracy_on_temporal_matches": 0.8333
+            },
+            "episode_macro": {
+              "segmentation": 0.2857,
+              "semantic": 0.2381
+            },
+            "source_equal_macro": {
+              "segmentation": 0.2857,
+              "semantic": 0.2381
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 5,
+                "unknown": 0,
+                "segmentation_f1": 0.8571,
+                "semantic_f1": 0.7143,
+                "caption_accuracy_on_temporal_matches": 0.8333
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2857,
+              "semantic_f1": 0.2857,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.1429,
+              "semantic": 0.1429
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1429,
+              "semantic": 0.1429
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 3,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.4286,
+                "semantic_f1": 0.4286,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 7,
+              "accepted": 6,
+              "unknown": 0,
+              "segmentation_f1": 0.6667,
+              "semantic_f1": 0.5714,
+              "caption_accuracy_on_temporal_matches": 0.8571
+            },
+            "episode_macro": {
+              "segmentation": 0.5079,
+              "semantic": 0.4603
+            },
+            "source_equal_macro": {
+              "segmentation": 0.5079,
+              "semantic": 0.4603
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.6667,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 5,
+                "unknown": 0,
+                "segmentation_f1": 0.8571,
+                "semantic_f1": 0.7143,
+                "caption_accuracy_on_temporal_matches": 0.8333
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 4,
+              "accepted": 4,
+              "unknown": 0,
+              "segmentation_f1": 0.381,
+              "semantic_f1": 0.381,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.1905,
+              "semantic": 0.1905
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1905,
+              "semantic": 0.1905
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 4,
+                "accepted": 4,
+                "unknown": 0,
+                "segmentation_f1": 0.5714,
+                "semantic_f1": 0.5714,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          }
+        },
+        "argus_flora_vllm": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 6,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.5714,
+              "semantic_f1": 0.4762,
+              "caption_accuracy_on_temporal_matches": 0.8333
+            },
+            "episode_macro": {
+              "segmentation": 0.2857,
+              "semantic": 0.2381
+            },
+            "source_equal_macro": {
+              "segmentation": 0.2857,
+              "semantic": 0.2381
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 5,
+                "unknown": 0,
+                "segmentation_f1": 0.8571,
+                "semantic_f1": 0.7143,
+                "caption_accuracy_on_temporal_matches": 0.8333
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 3,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2857,
+              "semantic_f1": 0.2857,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.1429,
+              "semantic": 0.1429
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1429,
+              "semantic": 0.1429
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 3,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.4286,
+                "semantic_f1": 0.4286,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 7,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.6667,
+              "semantic_f1": 0.4762,
+              "caption_accuracy_on_temporal_matches": 0.7143
+            },
+            "episode_macro": {
+              "segmentation": 0.5079,
+              "semantic": 0.2381
+            },
+            "source_equal_macro": {
+              "segmentation": 0.5079,
+              "semantic": 0.2381
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 5,
+                "unknown": 0,
+                "segmentation_f1": 0.8571,
+                "semantic_f1": 0.7143,
+                "caption_accuracy_on_temporal_matches": 0.8333
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 8,
+              "gold": 13,
+              "matched": 4,
+              "accepted": 4,
+              "unknown": 0,
+              "segmentation_f1": 0.381,
+              "semantic_f1": 0.381,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.1905,
+              "semantic": 0.1905
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1905,
+              "semantic": 0.1905
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 6,
+                "gold": 8,
+                "matched": 4,
+                "accepted": 4,
+                "unknown": 0,
+                "segmentation_f1": 0.5714,
+                "semantic_f1": 0.5714,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          }
+        },
+        "argus_astra": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 6,
+              "accepted": 6,
+              "unknown": 0,
+              "segmentation_f1": 0.4138,
+              "semantic_f1": 0.4138,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.1818,
+              "semantic": 0.1818
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1818,
+              "semantic": 0.1818
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 6,
+                "unknown": 0,
+                "segmentation_f1": 0.5455,
+                "semantic_f1": 0.5455,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.1379,
+              "semantic_f1": 0.1379,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0606
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0606
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.1818,
+                "semantic_f1": 0.1818,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 7,
+              "accepted": 6,
+              "unknown": 0,
+              "segmentation_f1": 0.4828,
+              "semantic_f1": 0.4138,
+              "caption_accuracy_on_temporal_matches": 0.8571
+            },
+            "episode_macro": {
+              "segmentation": 0.4041,
+              "semantic": 0.1818
+            },
+            "source_equal_macro": {
+              "segmentation": 0.4041,
+              "semantic": 0.1818
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 6,
+                "unknown": 0,
+                "segmentation_f1": 0.5455,
+                "semantic_f1": 0.5455,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.1379,
+              "semantic_f1": 0.1379,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0606
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0606
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.1818,
+                "semantic_f1": 0.1818,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          }
+        },
+        "argus_sol61": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 5,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2632,
+              "semantic_f1": 0.1579,
+              "caption_accuracy_on_temporal_matches": 0.6
+            },
+            "episode_macro": {
+              "segmentation": 0.1075,
+              "semantic": 0.0645
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1075,
+              "semantic": 0.0645
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.3226,
+                "semantic_f1": 0.1935,
+                "caption_accuracy_on_temporal_matches": 0.6
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.1053,
+              "semantic_f1": 0.0526,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.0215
+            },
+            "source_equal_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.0215
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.129,
+                "semantic_f1": 0.0645,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 6,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.3158,
+              "semantic_f1": 0.1579,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.3298,
+              "semantic": 0.0645
+            },
+            "source_equal_macro": {
+              "segmentation": 0.3298,
+              "semantic": 0.0645
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.3226,
+                "semantic_f1": 0.1935,
+                "caption_accuracy_on_temporal_matches": 0.6
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.1053,
+              "semantic_f1": 0.0526,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.0215
+            },
+            "source_equal_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.0215
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.129,
+                "semantic_f1": 0.0645,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          }
+        },
+        "argus_astra_flora": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 6,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.4138,
+              "semantic_f1": 0.2069,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.1818,
+              "semantic": 0.0909
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1818,
+              "semantic": 0.0909
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.5455,
+                "semantic_f1": 0.2727,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.1379,
+              "semantic_f1": 0.069,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0303
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0303
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.1818,
+                "semantic_f1": 0.0909,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 7,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.4828,
+              "semantic_f1": 0.2069,
+              "caption_accuracy_on_temporal_matches": 0.4286
+            },
+            "episode_macro": {
+              "segmentation": 0.4041,
+              "semantic": 0.0909
+            },
+            "source_equal_macro": {
+              "segmentation": 0.4041,
+              "semantic": 0.0909
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 6,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.5455,
+                "semantic_f1": 0.2727,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 16,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 1,
+              "unknown": 0,
+              "segmentation_f1": 0.1379,
+              "semantic_f1": 0.069,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0303
+            },
+            "source_equal_macro": {
+              "segmentation": 0.0606,
+              "semantic": 0.0303
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 14,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 0.1818,
+                "semantic_f1": 0.0909,
+                "caption_accuracy_on_temporal_matches": 0.5
+              }
+            }
+          }
+        },
+        "argus_sol61_flora": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 5,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.2632,
+              "semantic_f1": 0.1579,
+              "caption_accuracy_on_temporal_matches": 0.6
+            },
+            "episode_macro": {
+              "segmentation": 0.1075,
+              "semantic": 0.0645
+            },
+            "source_equal_macro": {
+              "segmentation": 0.1075,
+              "semantic": 0.0645
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.3226,
+                "semantic_f1": 0.1935,
+                "caption_accuracy_on_temporal_matches": 0.6
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.1053,
+              "semantic_f1": 0.1053,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.043
+            },
+            "source_equal_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.043
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.129,
+                "semantic_f1": 0.129,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 6,
+              "accepted": 3,
+              "unknown": 0,
+              "segmentation_f1": 0.3158,
+              "semantic_f1": 0.1579,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.3298,
+              "semantic": 0.0645
+            },
+            "source_equal_macro": {
+              "segmentation": 0.3298,
+              "semantic": 0.0645
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 1,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": 0.0
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 3,
+                "unknown": 0,
+                "segmentation_f1": 0.3226,
+                "semantic_f1": 0.1935,
+                "caption_accuracy_on_temporal_matches": 0.6
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 25,
+              "gold": 13,
+              "matched": 2,
+              "accepted": 2,
+              "unknown": 0,
+              "segmentation_f1": 0.1053,
+              "semantic_f1": 0.1053,
+              "caption_accuracy_on_temporal_matches": 1.0
+            },
+            "episode_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.043
+            },
+            "source_equal_macro": {
+              "segmentation": 0.043,
+              "semantic": 0.043
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 2,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 1,
+                "gold": 3,
+                "matched": 0,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.0,
+                "semantic_f1": 0.0,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 23,
+                "gold": 8,
+                "matched": 2,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.129,
+                "semantic_f1": 0.129,
+                "caption_accuracy_on_temporal_matches": 1.0
+              }
+            }
+          }
+        },
+        "flora_tempseg_caption": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 10,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.4082,
+              "semantic_f1": 0.2041,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.7521,
+              "semantic": 0.4231
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7521,
+              "semantic": 0.4231
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.5,
+                "caption_accuracy_on_temporal_matches": 0.5
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 3,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.6667,
+                "caption_accuracy_on_temporal_matches": 0.6667
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": 0.1026,
+                "caption_accuracy_on_temporal_matches": 0.4
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 9,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.3673,
+              "semantic_f1": 0.2041,
+              "caption_accuracy_on_temporal_matches": 0.5556
+            },
+            "episode_macro": {
+              "segmentation": 0.641,
+              "semantic": 0.4231
+            },
+            "source_equal_macro": {
+              "segmentation": 0.641,
+              "semantic": 0.4231
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.5,
+                "caption_accuracy_on_temporal_matches": 0.5
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 2,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": 0.6667,
+                "caption_accuracy_on_temporal_matches": 1.0
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": 0.1026,
+                "caption_accuracy_on_temporal_matches": 0.4
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 10,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.4082,
+              "semantic_f1": 0.2041,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.7521,
+              "semantic": 0.4231
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7521,
+              "semantic": 0.4231
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.5,
+                "caption_accuracy_on_temporal_matches": 0.5
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 3,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.6667,
+                "caption_accuracy_on_temporal_matches": 0.6667
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": 0.1026,
+                "caption_accuracy_on_temporal_matches": 0.4
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 10,
+              "accepted": 5,
+              "unknown": 0,
+              "segmentation_f1": 0.4082,
+              "semantic_f1": 0.2041,
+              "caption_accuracy_on_temporal_matches": 0.5
+            },
+            "episode_macro": {
+              "segmentation": 0.7521,
+              "semantic": 0.4231
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7521,
+              "semantic": 0.4231
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 1,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.5,
+                "caption_accuracy_on_temporal_matches": 0.5
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 3,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": 0.6667,
+                "caption_accuracy_on_temporal_matches": 0.6667
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 2,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": 0.1026,
+                "caption_accuracy_on_temporal_matches": 0.4
+              }
+            }
+          }
+        },
+        "flora_tempseg": {
+          "raw@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 10,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.4082,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.7521,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7521,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 3,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "raw@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 9,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.3673,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.641,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.641,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 2,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.6667,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.5": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 10,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.4082,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.7521,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7521,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 3,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          },
+          "snap@0.75": {
+            "complete_cohort": true,
+            "pooled_micro": {
+              "predicted": 36,
+              "gold": 13,
+              "matched": 10,
+              "accepted": 0,
+              "unknown": 0,
+              "segmentation_f1": 0.4082,
+              "semantic_f1": null,
+              "caption_accuracy_on_temporal_matches": null
+            },
+            "episode_macro": {
+              "segmentation": 0.7521,
+              "semantic": null
+            },
+            "source_equal_macro": {
+              "segmentation": 0.7521,
+              "semantic": null
+            },
+            "per_episode": {
+              "robointer_droid_000013": {
+                "status": "available",
+                "predicted": 2,
+                "gold": 2,
+                "matched": 2,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "galaxea_049": {
+                "status": "available",
+                "predicted": 3,
+                "gold": 3,
+                "matched": 3,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 1.0,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              },
+              "homer_33": {
+                "status": "available",
+                "predicted": 31,
+                "gold": 8,
+                "matched": 5,
+                "accepted": 0,
+                "unknown": 0,
+                "segmentation_f1": 0.2564,
+                "semantic_f1": null,
+                "caption_accuracy_on_temporal_matches": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "qualitative_spot_check": {
+    "image": "data/flora-qualification/homer-caption-disagreement-review.png",
+    "sha256": "dcfa9ae941fad139a0b111058ef6b273b89eed87564fb94dc9417179b0f80625",
+    "video_sha256": "c27a72aa1f474e19ef4e738453bf75ef53604969e2dcaeea0af5d106810a2690",
+    "command": "ffmpeg -ss 50 -i native.mp4 -vf fps=1/4,scale=320:-1,tile=3x2 -frames:v 1",
+    "observation": "Sampled frames show left hand holding onion and right hand using knife; no adjudicated full-window action-granularity score. Existing judge scores unchanged."
+  },
+  "comparison_evidence": {
+    "path": "comparison-frontier-scored-v5.json",
+    "sha256": "2fbd5ee022add9b4a9fd6868579785241a52dfc0ce2893865192b6e000ccbda1"
+  },
+  "comparison_manifest": {
+    "path": "comparison-frontier-manifest-v5.json",
+    "sha256": "121ae53cc229729ec1dbbf0dd9f195338cc6deb79565ccb7c49750f28715e9be"
+  },
+  "reward_cpu_fix": {
+    "evidence": {
+      "path": "reward-benchmark/native-media-probe-v2.json",
+      "sha256": "1033a3c6e940159a6bad3964646cdaabd32902b040d8a4294b0a1b1c47425d0e"
+    },
+    "admitted": 47,
+    "packet_count_repairs": 9,
+    "unaffected_exact_indices_and_pixels": 38
+  },
+  "tempseg_recovery": {
+    "original_run": "tempseg-native-v1",
+    "continuation": {
+      "path": "tempseg-native-continuation-v1.receipt.json",
+      "sha256": "0e26a1072dcc4c3894fda7f13b3b6a312b89143f18a9e82e62bdef0974ae4d6a"
+    },
+    "linux_replay": {
+      "path": "tempseg-native-v1-linux-cpu.receipt.json",
+      "sha256": "29c1751fcdea3f6b1f2b3a82b4565613e0698d95de97b50d8bad2835db7a325d"
+    }
+  },
+  "cpu_preparation": {
+    "paired-astra-caption-v1": {
+      "path": "/evidence/prepared/paired-astra-caption-v1/cache.json",
+      "sha256": "524d03bac40f2e258ae2d54914c6560592e3cc69ea90c2ce3d3911750ad80c2f",
+      "requests_sha256": "8268e29b8fcc9192ae95c491986c6af2dec53e14305a05e63a874573425629aa",
+      "episodes": 3,
+      "cpu_prepare_wall_s": 404.067607637,
+      "intervals": 16
+    },
+    "paired-sol61-caption-v2": {
+      "path": "/evidence/prepared/paired-sol61-caption-v2/cache.json",
+      "sha256": "75b2223feaa84f9518b7a2f769639d522bb063199373be6605a5af8f038d2bc1",
+      "requests_sha256": "be71e32482ab88c0ae26242918e90dc446327592dae0d253cb4905abd54017f4",
+      "episodes": 2,
+      "cpu_prepare_wall_s": 544.882062532,
+      "intervals": 24
+    },
+    "native-tempseg-caption-v1": {
+      "path": "/evidence/prepared/native-tempseg-caption-v1/cache.json",
+      "sha256": "88173875c071191859d64431f0ea248436cf6353d52ee342ec3c6f74b9bc2e17",
+      "requests_sha256": "bf15ad4d186cc33d4a29a04c7c8c3cdc49f5334d8d09be62d34c6e23aa8cd737",
+      "episodes": 3,
+      "cpu_prepare_wall_s": 595.50154513,
+      "intervals": 36
+    }
+  },
+  "validation": {
+    "offline_tests": {
+      "passed": 2460,
+      "skipped": 2,
+      "evidence": {
+        "path": "data/flora-qualification/quality-final-tests-v2.log",
+        "sha256": "31ca5fd03060d65b428f813502edfa67193ad2a09d9a52256e4174ef9811dfd1"
+      }
+    },
+    "native_segment_torch_cpu_tests_passed": 30,
+    "scoped_refute": "No remaining blocker after durable-collection, continuation and checkpoint-corruption probes."
+  },
+  "deployment": {
+    "app": "argus-flora-research",
+    "workspace": "sentient-x",
+    "evidence": {
+      "path": "data/flora-qualification/deploy-quality-v7.log",
+      "sha256": "e4c0c0175249a3eef7157576abd9c121b43d2503157cd7281f0f1ed3007e34b0"
+    }
+  },
+  "budget": {
+    "gpu_campaign_ceiling_usd": 24,
+    "conservative_settled_estimate_usd": 19.836441909649096,
+    "outstanding_reservations": 0,
+    "evidence": {
+      "path": "data/flora-qualification/modal-budget.jsonl",
+      "sha256": "382c49f78dad802be11da5a15084dbd3d24f5df59a76fa5eec680a9365072984"
+    },
+    "judge_spend_usd": 0.09813,
+    "judge_ceiling_usd": 0.5,
+    "note": "GPU ledger retains full startup allowances. CPU preparation and frontier annotation have separate measured costs. Estimates are not provider invoices."
+  }
+}

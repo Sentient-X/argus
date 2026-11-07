@@ -66,6 +66,23 @@ Each recording produces one public episode. Long recordings are split to fit API
 
 Resume preserves the original settings, input verification and evidence selection. Changes to paid request semantics require a new run. `--free` skips paid field interpretation, image-detail routing and evidence selection, so it previews base requests rather than the full paid evidence path. Spending caps account for all applicable calls and outstanding reservations; unresolved charges stay reserved.
 
+## Flora research captions and rewards
+
+`python -m events.flora` applies NVIDIA's pinned Flora Captioner to existing Argus event
+intervals and retains Flora Rewarder outcome and dense action-quality scores. Preparation
+validates native videos offline; hosted execution uses authenticated Modal H200 jobs with
+vLLM continuous batching and retained raw results for recovery. Native GPU execution remains
+available as a reference. See [setup, commands and evidence limits](docs/flora-adoption.md).
+
+Flora code and weights are restricted to noncommercial research/evaluation. This optional
+research path does not change the default annotator or production QC. Caption and reward
+inference passed a three-episode Modal GPU qualification; model quality remains unqualified.
+See the [initial runtime qualification](docs/flora-qualification-2026-10-22.md) and the
+[matched Astra/Sol quality pilot and resident inference results](docs/flora-quality-2026-10-22.md).
+The [finished-data throughput report](docs/flora-throughput-2026-10-24.md) records the
+uninterrupted prefetch qualification, retained captions, GPU idle gaps and cost
+boundaries. Sustained saturation and the $0.70/video-hour target remain unmet.
+
 ## Results and further use
 
 The output schema includes action phases (advancing, wasteful or idle), subgoals, key events, outcomes, operator mistakes, recoveries, scene changes and recording quality. Sensor findings include evidence, confidence and limitations; inspection can yield no additional finding when the signal is inconclusive.

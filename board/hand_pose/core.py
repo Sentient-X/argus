@@ -131,7 +131,7 @@ def read_frames(path: str, W: int, H: int, resample: bool = False):
     """Yield RGB uint8 frames W x H as shown, decoded by ffmpeg (every frame, no dup/drop): turned upright as the
     file says, and scaled to square pixels when they are not (resample)."""
     vf = ["-vf", f"scale={W}:{H}:flags=lanczos,setsar=1"] if resample else []
-    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", path, "-map", "0:v:0", "-vsync", "passthrough", *vf,
+    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", path, "-map", "0:v:0", "-fps_mode", "passthrough", *vf,
                           "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, bufsize=W * H * 3 * 4)
     n = W * H * 3
     try:

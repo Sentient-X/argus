@@ -1,0 +1,386 @@
+"""Offline Flora contracts: native media, retained evidence and fail-closed parsing.
+
+These are not model-quality tests and do not simulate the NVIDIA model runtime.
+"""
+import copy
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+import av
+import numpy as np
+import pytest
+
+from events import flora
+
+
+@pytest.fixture
+def planned(tmp_path):
+    video = tmp_path / "episode.mp4"
+    with av.open(str(video), "w") as container:
+        stream = container.add_stream("mpeg4", rate=8)
+        stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+        for i in range(32):
+            frame = av.VideoFrame.from_ndarray(np.full((48, 64, 3), i * 5, dtype=np.uint8), format="rgb24")
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        for packet in stream.encode():
+            container.mux(packet)
+    events = tmp_path / "events.json"
+    events.write_text(json.dumps({"events": [{"start_s": 0, "end_s": 2, "label": "old label"},
+                                           {"start_s": 2, "end_s": 4, "label": "old label"}]}))
+    out = tmp_path / "run"
+    request = flora.prepare([video], events, "Put cup on tray.", "human", out)
+    return request, out, video, events
+
+
+def outputs(request):
+    return {
+        "caption": {"segments": [{**event, "caption": f"Move item {i}.", "status": "complete"}
+                                  for i, event in enumerate(request["events"])]},
+        "outcome": {"id": "episode", "task": request["task"], "duration_s": 4,
+                    "score": 3, "expected_score": 3, "progress": 0.5,
+                    "probabilities": {"1": 0, "2": 0.25, "3": 0.5, "4": 0.25, "5": 0}},
+        "dense": {"id": "episode", "task": request["task"], "duration_s": 4,
+                  "invalid_clips": 0, "worst_score": 2,
+                  "clips": [{"valid": True, "quality": "2" * 16 + "3" * 16}],
+                  "segments": [{"start_s": 0, "end_s": 2, "score": 2},
+                               {"start_s": 2, "end_s": 4, "score": 3}]},
+    }
+
+
+def test_plan_decodes_native_clock_and_reuses_identical_request(planned):
+    request, out, video, events = planned
+    assert request["duration_s"] == 4
+    assert flora.video_clock(video).frames == 32
+    assert flora.prepare([video], events, request["task"], "human", out) == request
+    assert list(out.iterdir()) == [out / "request.json"]
+    with pytest.raises(flora.FloraError, match="changed"):
+        flora.prepare([video], events, "Another task", "human", out)
+
+
+@pytest.mark.parametrize("event", [
+    {"start_s": -1, "end_s": 2}, {"start_s": 2, "end_s": 1},
+    {"start_s": 0, "end_s": 5}, {"start_s": True, "end_s": 2},
+    {"start_s": 0, "end_s": float("nan")}, {"start_s": 0, "end_s": float("inf")},
+])
+def test_invalid_intervals_rejected_before_execution(planned, event):
+    request, out, video, events = planned
+    events.write_text(json.dumps({"events": [event]}))
+    with pytest.raises(flora.FloraError):
+        flora.prepare([video], events, request["task"], "human", out.parent / "bad")
+
+
+def test_overlapping_events_preserved(planned):
+    request, out, video, events = planned
+    events.write_text(json.dumps({"events": [{"start_s": 0, "end_s": 3}, {"start_s": 1, "end_s": 4}]}))
+    other = flora.prepare([video], events, request["task"], "human", out.parent / "overlap")
+    assert other["events"] == [{"start_s": 0, "end_s": 3}, {"start_s": 1, "end_s": 4}]
+
+
+def test_native_microsecond_endpoint_preserved_without_frame_tolerance(tmp_path):
+    video = tmp_path / "native.mp4"
+    with av.open(str(video), "w") as container:
+        stream = container.add_stream("mpeg4", rate=30)
+        stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+        for _ in range(395):
+            frame = av.VideoFrame.from_ndarray(np.zeros((48, 64, 3), dtype=np.uint8), format="rgb24")
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        for packet in stream.encode():
+            container.mux(packet)
+    events = tmp_path / "events.json"
+    rows = [{"start_s": 8.0, "end_s": 13.166667}]
+    events.write_text(json.dumps({"events": rows}))
+    request = flora.prepare([video], events, "Pour the cup.", "yam", tmp_path / "accepted")
+    assert request["duration_s"] == 395 / 30
+    assert request["events"] == rows
+    rows[0]["end_s"] = 13.166668
+    events.write_text(json.dumps({"events": rows}))
+    with pytest.raises(flora.FloraError, match="within the native video clock"):
+        flora.prepare([video], events, "Pour the cup.", "yam", tmp_path / "refused")
+
+
+def test_retained_outputs_join_without_launching_models(planned):
+    request, out, _, _ = planned
+    for stage, raw in outputs(request).items():
+        (out / f"{stage}.json").write_text(json.dumps(raw) + "\n")
+        (out / f"{stage}.pending.json").write_text(json.dumps({"request_sha256": request["request_sha256"], "stage": stage}))
+    result_path = flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+    result = json.loads(result_path.read_text())
+    assert [(r["start_s"], r["end_s"]) for r in result["events"]] == [(0, 2), (2, 4)]
+    assert "skill" not in result["events"][0]
+    assert "summary" not in result
+    assert result["outcome_reward"]["score"] == 3
+    assert result["raw_sha256"]["dense"] == flora.digest(out / "dense.json")
+    assert flora.execute(request, out, "/no/gpu/python", "/no/gpu/python") == result_path
+
+
+def test_unsettled_stage_never_repeats_compute(planned):
+    request, out, _, _ = planned
+    (out / "caption.pending.json").write_text(json.dumps({"request_sha256": request["request_sha256"], "stage": "caption"}))
+    with pytest.raises(flora.FloraError, match="interrupted"):
+        flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+    assert not (out / "result.json").exists()
+    assert not (out / ".running").exists()
+
+
+def test_live_owner_is_not_removed(planned):
+    request, out, _, _ = planned
+    (out / ".running").mkdir()
+    with pytest.raises(flora.FloraError, match="still own"):
+        flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+    assert (out / ".running").is_dir()
+
+
+@pytest.mark.parametrize("stage,change", [
+    ("caption", lambda x: x["segments"].pop()),
+    ("caption", lambda x: x["segments"][0].update(end_s=2.1)),
+    ("caption", lambda x: x["segments"][0].update(caption=" ")),
+    ("caption", lambda x: x["segments"][0].update(status="unsupported_target_frames")),
+    ("outcome", lambda x: x.update(score=True)),
+    ("outcome", lambda x: x.update(score=6)),
+    ("outcome", lambda x: x.update(expected_score=4)),
+    ("outcome", lambda x: x.update(task="different task")),
+    ("outcome", lambda x: x["probabilities"].update({"3": -0.5})),
+    ("dense", lambda x: x.update(invalid_clips=1)),
+    ("dense", lambda x: x["clips"][0].update(valid=False)),
+    ("dense", lambda x: x["clips"][0].update(quality="3" * 31)),
+    ("dense", lambda x: x["segments"][0].update(score=0)),
+    ("dense", lambda x: x["segments"][1].update(start_s=2.5)),
+    ("dense", lambda x: x["segments"][1].update(end_s=3.5)),
+])
+def test_bad_outputs_fail_closed(planned, stage, change):
+    request, _, _, _ = planned
+    raw = copy.deepcopy(outputs(request)[stage])
+    flora.validate(stage, raw, request)
+    change(raw)
+    with pytest.raises(flora.FloraError):
+        flora.validate(stage, raw, request)
+
+
+def test_invalid_dense_raw_is_kept_without_a_completed_result(planned):
+    request, out, _, _ = planned
+    raw = outputs(request)
+    raw["dense"]["invalid_clips"] = 1
+    for stage, value in raw.items():
+        (out / f"{stage}.json").write_text(json.dumps(value))
+        (out / f"{stage}.pending.json").write_text(json.dumps({"request_sha256": request["request_sha256"], "stage": stage}))
+    with pytest.raises(flora.FloraError, match="unparsed"):
+        flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+    assert json.loads((out / "dense.json").read_text())["invalid_clips"] == 1
+    assert not (out / "result.json").exists()
+
+
+def test_execute_requires_explicit_research_environments(planned):
+    _, out, video, events = planned
+    result = subprocess.run([sys.executable, "-m", "events.flora", "--video", str(video),
+                             "--events", str(events), "--task", "task", "--profile", "human",
+                             "--out", str(out), "--execute"], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "--noncommercial-research" in result.stderr
+    assert not list(out.glob("*.pending.json"))
+
+
+def test_unbound_result_is_rejected(planned):
+    request, out, _, _ = planned
+    (out / "caption.json").write_text(json.dumps(outputs(request)["caption"]))
+    with pytest.raises(flora.FloraError, match="no matching request"):
+        flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+
+
+def test_generation_saved_before_downstream_parser_failure(tmp_path):
+    from events.flora_journal import GenerationJournal
+    root = tmp_path / "generations"
+    calls = []
+
+    def generate():
+        calls.append(1)
+        return {"tokens": [10, 20, 30], "raw": "not a valid score"}
+
+    journal = GenerationJournal(root, "request-a")
+    reply = journal.run({"prompt": "score", "pixels": [1, 2, 3]}, generate)
+    with pytest.raises(ValueError):
+        int(reply["raw"])
+    replay = GenerationJournal(root, "request-a").run({"prompt": "score", "pixels": [1, 2, 3]}, generate)
+    assert replay == reply and calls == [1]
+
+
+def test_generation_uncertainty_and_changed_inputs_never_retry(tmp_path):
+    from events.flora_journal import GenerationJournal
+    calls = []
+
+    def interrupted():
+        calls.append(1)
+        raise RuntimeError("lost GPU response")
+
+    root = tmp_path / "generations"
+    with pytest.raises(RuntimeError, match="lost GPU response"):
+        GenerationJournal(root, "request-a").run({"prompt": "score"}, interrupted)
+    with pytest.raises((RuntimeError, ValueError)):
+        GenerationJournal(root, "request-a").run({"prompt": "score"}, interrupted)
+    assert calls == [1]
+    other = tmp_path / "completed"
+    GenerationJournal(other, "request-a").run({"prompt": "a"}, lambda: "retained")
+    with pytest.raises((RuntimeError, ValueError)):
+        GenerationJournal(other, "request-a").run({"prompt": "b"}, lambda: pytest.fail("changed input executed"))
+    with pytest.raises((RuntimeError, ValueError)):
+        GenerationJournal(other, "request-b").run({"prompt": "a"}, lambda: pytest.fail("changed owner executed"))
+
+
+def test_generation_array_identity_includes_content_and_shape():
+    from events.flora_journal import input_digest
+    array = np.array([[1, 2], [3, 4]], dtype=np.uint8)
+    assert input_digest(array) == input_digest(array.copy())
+    assert input_digest(array) != input_digest(array.reshape(4))
+    assert input_digest(array) != input_digest(array + 1)
+
+
+def test_completed_raw_tampering_is_rejected(planned):
+    request, out, _, _ = planned
+    for stage, raw in outputs(request).items():
+        (out / f"{stage}.json").write_text(json.dumps(raw))
+        (out / f"{stage}.pending.json").write_text(json.dumps({"request_sha256": request["request_sha256"], "stage": stage}))
+    flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+    raw = json.loads((out / "caption.json").read_text())
+    raw["segments"][0]["caption"] = "Changed caption."
+    (out / "caption.json").write_text(json.dumps(raw))
+    with pytest.raises(flora.FloraError, match="retained evidence changed"):
+        flora.execute(request, out, "/no/gpu/python", "/no/gpu/python")
+
+
+def test_reward_completion_journal_preserves_raw_logprobs_before_parse(tmp_path):
+    from types import SimpleNamespace as Record
+    from events.flora_journal import GenerationJournal
+    from events.flora_worker import _reward_generate
+    calls = []
+    completion = Record(text="bad score", token_ids=[42], logprobs=[{
+        42: Record(logprob=-0.5), 43: Record(logprob=float("-inf")),
+    }])
+
+    class Engine:
+        def generate(self, *args, **kwargs):
+            calls.append(1)
+            return [Record(outputs=[completion])]
+
+    params = Record(temperature=0, max_tokens=64, logprobs=5, n=1, top_p=1,
+                    top_k=-1, min_p=0, seed=None, repetition_penalty=1,
+                    presence_penalty=0, frequency_penalty=0,
+                    structured_outputs=Record(regex="[1-5]"))
+    request = [{"prompt": "score", "frames": np.zeros((2, 3, 4), dtype=np.uint8)}]
+    root = tmp_path / "reward-generations"
+    live = _reward_generate(Engine(), GenerationJournal(root, "identity")).generate(request, params)
+    with pytest.raises(ValueError):
+        int(live[0].outputs[0].text)
+    replay = _reward_generate(Engine(), GenerationJournal(root, "identity")).generate(request, params)
+    assert calls == [1]
+    assert replay[0].outputs[0].token_ids == [42]
+    assert replay[0].outputs[0].logprobs[0][43].logprob == float("-inf")
+
+
+def test_remote_durability_precedes_effect_and_return(tmp_path):
+    from events.flora_journal import GenerationJournal
+    observed = []
+    root = tmp_path / 'generations'
+    def commit():
+        observed.append(('commit', sorted(path.name for path in root.iterdir())))
+    def effect():
+        observed.append(('paid', None))
+        return 'retained'
+    journal = GenerationJournal(root, 'request', commit)
+    assert journal.run({'x': 1}, effect) == 'retained'
+    assert observed == [
+        ('commit', ['000000.intent.json']), ('paid', None),
+        ('commit', ['000000.intent.json', '000000.result.json'])]
+    assert GenerationJournal(root, 'request', commit).run({'x': 1}, effect) == 'retained'
+    assert len(observed) == 3
+
+
+def test_remote_intent_commit_failure_prevents_paid_call(tmp_path):
+    from events.flora_journal import GenerationJournal
+    def commit():
+        raise OSError('remote persistence unavailable')
+    def forbidden():
+        pytest.fail('paid call before durable intent')
+    journal = GenerationJournal(tmp_path / 'generations', 'request', commit)
+    with pytest.raises(OSError, match='persistence'):
+        journal.run({'x': 1}, forbidden)
+
+
+@pytest.fixture
+def native_vfr(tmp_path):
+    from fractions import Fraction
+
+    video = tmp_path / "native-vfr.mp4"
+    timestamps_ms = [0, 40, 80, 100, 140, 180, 200, 240, 280, 300]
+    with av.open(str(video), "w") as container:
+        stream = container.add_stream("mpeg4", rate=25)
+        stream.width, stream.height, stream.pix_fmt = 64, 48, "yuv420p"
+        stream.time_base = stream.codec_context.time_base = Fraction(1, 1000)
+        for index, pts in enumerate(timestamps_ms):
+            frame = av.VideoFrame.from_ndarray(
+                np.full((48, 64, 3), index * 20, dtype=np.uint8), format="rgb24")
+            frame.pts, frame.time_base = pts, Fraction(1, 1000)
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        for packet in stream.encode():
+            container.mux(packet)
+    with av.open(str(video)) as container:
+        stream = container.streams.video[0]
+        frames = list(container.decode(stream))
+        # Assert the fixture really retains 40/40/20 ms cadence after encoding.
+        assert [float(frame.pts * stream.time_base) for frame in frames] == [
+            value / 1000 for value in timestamps_ms]
+        tail = frames[-1].duration * stream.time_base or Fraction(1, stream.average_rate)
+        duration = round((frames[-1].pts * stream.time_base + tail) * 1000000) / 1000000
+    events = tmp_path / "vfr-events.json"
+    intervals = [{"start_s": 0, "end_s": 0.14}, {"start_s": 0.14, "end_s": duration}]
+    events.write_text(json.dumps({"events": intervals}))
+    return video, events, duration, intervals
+
+
+def test_caption_only_preserves_genuine_variable_rate_native_clock(native_vfr, tmp_path):
+    video, events, duration, intervals = native_vfr
+    original = video.read_bytes()
+    request = flora.prepare_caption([video], events, "Move the cup.", "human", tmp_path / "caption")
+    clock = flora.video_clock(video, caption_only=True)
+    assert clock.duration == duration and clock.frames == 10 and clock.constant_rate is False
+    assert request["duration_s"] == duration and request["events"] == intervals
+    assert request["inference_scope"] == "caption"
+    assert video.read_bytes() == original
+    assert flora.prepare_caption([video], events, "Move the cup.", "human", tmp_path / "caption") == request
+    for stage in ("caption", "caption-native", "caption-session"):
+        flora.require_stage(request, stage)
+    flora.validate("caption", {"segments": [
+        {**row, "caption": "Move the cup.", "status": "complete"} for row in intervals]}, request)
+
+
+def test_variable_rate_never_enters_combined_rewards_or_robot_profile(native_vfr, tmp_path):
+    video, events, _, _ = native_vfr
+    with pytest.raises(flora.FloraError, match="constant-rate"):
+        flora.video_clock(video)
+    with pytest.raises(flora.FloraError, match="constant-rate"):
+        flora.prepare([video], events, "Move the cup.", "human", tmp_path / "combined")
+    with pytest.raises(flora.FloraError, match="one human-profile camera"):
+        flora.prepare_caption([video], events, "Move the cup.", "yam", tmp_path / "robot")
+    request = flora.prepare_caption([video], events, "Move the cup.", "human", tmp_path / "caption")
+    for stage in ("outcome", "dense", "reward", "reward-outcome", "reward-dense", "segment-native"):
+        with pytest.raises(flora.FloraError, match="caption-only"):
+            flora.require_stage(request, stage)
+    with pytest.raises(flora.FloraError, match="caption-only"):
+        flora.execute(request, tmp_path / "caption", "/no/gpu/python", "/no/gpu/python")
+    with pytest.raises(flora.FloraError, match="caption-only"):
+        flora.validate("dense", {}, request)
+    assert not (tmp_path / "caption/.running").exists()
+    assert not (tmp_path / "combined").exists()
+
+
+def test_caption_scope_is_part_of_immutable_request_identity(planned):
+    request, out, video, events = planned
+    caption = flora.prepare_caption([video], events, request["task"], "human", out.parent / "caption")
+    assert caption["request_sha256"] != request["request_sha256"]
+    with pytest.raises(flora.FloraError, match="changed"):
+        flora.prepare_caption([video], events, request["task"], "human", out)
+    with pytest.raises(flora.FloraError, match="unknown Flora inference scope"):
+        flora.require_stage({**caption, "inference_scope": "unbounded"}, "caption")

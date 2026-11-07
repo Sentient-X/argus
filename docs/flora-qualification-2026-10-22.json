@@ -1,0 +1,947 @@
+{
+  "schema": "argus.flora.qualification-evidence/v1",
+  "date": "2026-10-22",
+  "scope": "Noncommercial research functional/performance cohort; not held-out model-quality qualification",
+  "models": {
+    "captioner": {
+      "repo": "nvidia/Flora-Captioner",
+      "revision": "f736ca36925ae55d2f7915993ed1bc9f87288bb3",
+      "weights_revision": "fef0bbfe11829ca7f3539d58da7a6a2c2f109dc6"
+    },
+    "rewarder": {
+      "repo": "nvidia/Flora-Rewarder",
+      "revision": "7de68d22c4a9decec5ddb7f86ddcaee8f82d3367",
+      "weights_revision": "7de68d22c4a9decec5ddb7f86ddcaee8f82d3367"
+    }
+  },
+  "implementation_sha256": {
+    "flora_hosted.py": "3f20c18357e99c004fd3ed2620b5a157a47176100f38debfbb8e6ce3856b232d",
+    "flora_vllm.py": "e9de60c577334dafc32e9306241ccf1dd41e4f5675bbcde19f6640b64fa61d9d",
+    "flora_import.py": "3942e9aae7f4a87c67fd8aae04cf876a901f9e20e93b9b52c0ccc59a0a521544",
+    "flora_worker.py": "749af0b869affd3707d8b3f1c172ec6abf0299068e4eff4952525fb79451d884",
+    "flora_reward_batch.py": "c5e1f00be883657959b94f282e5c570e778b108ba5f7052a0ccf79cfced37fd1",
+    "flora_journal.py": "96806f8dba4997ed3cbdf5b527aa7989948e739907df86bbb4c02952d55625ec",
+    "flora_modal.py": "85da11a9a4bf4ede29209d697e2d0274d73ad7304b5f95f5c4f3fb300926b15b",
+    "flora.py": "bded110d84ce8fd8bf8d4cc30eece32948bf771671dcf2c98daa772241a4e61a"
+  },
+  "runtime": {
+    "torch": "2.11.0",
+    "vllm": "0.24.0",
+    "transformers": "5.8.1",
+    "av": "16.0.1",
+    "huggingface-hub": "1.33.0",
+    "peft": "0.18.1"
+  },
+  "cpu_admission_sha256": "cac345d9e7a9c69548b680999929dc4186f0b637489204582bb75bc026890f67",
+  "episodes": [
+    {
+      "id": "robointer_droid_000013",
+      "video_sha256": [
+        "99a81db00989bf4f7c50c37f0de262aa3557804fc93e971bdd2db951637fa0aa"
+      ],
+      "events": [
+        {
+          "start_s": 12.35,
+          "end_s": 13.52
+        }
+      ],
+      "events_sha256": "4eb75b696999e41045845cd0e8bb9e8246b4d39e172d2ffc11f420b76a96f17d",
+      "task": "Move the silver cup to the next to green dispenser",
+      "profile": "yam",
+      "duration_s": 16.4,
+      "captions": [
+        {
+          "start_s": 12.35,
+          "end_s": 13.52,
+          "label": "Move the silver cup to the next to green dispenser."
+        }
+      ],
+      "outcome_reward": {
+        "id": "robointer_droid_000013",
+        "task": "Move the silver cup to the next to green dispenser",
+        "score": 5,
+        "expected_score": 4.9999,
+        "progress": 1.0,
+        "probabilities": {
+          "1": 0.0,
+          "2": 0.0,
+          "3": 0.0,
+          "4": 0.0,
+          "5": 1.0
+        },
+        "rationale": "The robot picked up the silver cup and placed it next to the green dispenser, where it remained in the final frame.",
+        "duration_s": 16.4,
+        "sampled_frames": 64,
+        "output": "Rationale: The robot picked up the silver cup and placed it next to the green dispenser, where it remained in the final frame.\n\nScore: 5"
+      },
+      "dense_timeline": [
+        {
+          "start_s": 0.0,
+          "end_s": 9.4,
+          "score": 3
+        },
+        {
+          "start_s": 9.4,
+          "end_s": 16.0,
+          "score": 2
+        },
+        {
+          "start_s": 16.0,
+          "end_s": 16.4,
+          "score": 3
+        }
+      ],
+      "dense_summary": {
+        "invalid_clips": 0,
+        "worst_score": 2,
+        "mean_score": 2.5976
+      },
+      "raw_sha256": {
+        "caption": "cfba4d3946e721e929524dbf07858b8145bd9f41e38cf88a0f38740fbfa847d9",
+        "outcome": "f6c1f52991931b70fd325e36944ee8b5c6d3ad2082c586a893a292b80a86982e",
+        "dense": "1220d9f875d3ab861869b756e4de76a87fcdeaa0cd03bb3eb0278a9df32f5057"
+      },
+      "imported_result_sha256": "7cef633965cfc2a9819485ef36eeb25fd092f9d454cc1b0d9ff39e973ac53f7e"
+    },
+    {
+      "id": "galaxea_049",
+      "video_sha256": [
+        "771a004b42304b0a8ab3a7caba1fcbb12756bbe6517a122a8bfdd99611f0f89c"
+      ],
+      "events": [
+        {
+          "start_s": 1.0,
+          "end_s": 11.5
+        }
+      ],
+      "events_sha256": "e56cc74acac5008d0fc2c31598c8eb9905034ecd46cea01fc6ace9693f9b4a97",
+      "task": "use a gripper to pick up the cup and pour the content into a bowl.",
+      "profile": "yam",
+      "duration_s": 13.166666666666666,
+      "captions": [
+        {
+          "start_s": 1.0,
+          "end_s": 11.5,
+          "label": "Pick up the blue cup with the right hand, pour the coffee beans from the blue cup into the pink bowl, and place the blue cup on the table."
+        }
+      ],
+      "outcome_reward": {
+        "id": "galaxea_049",
+        "task": "use a gripper to pick up the cup and pour the content into a bowl.",
+        "score": 5,
+        "expected_score": 4.9999,
+        "progress": 1.0,
+        "probabilities": {
+          "1": 0.0,
+          "2": 0.0,
+          "3": 0.0,
+          "4": 0.0,
+          "5": 1.0
+        },
+        "rationale": "The robot grasped the cup, lifted and tilted it over the bowl, and poured the contents into the bowl. The cup was then placed back on the table.",
+        "duration_s": 13.167,
+        "sampled_frames": 64,
+        "output": "Rationale: The robot grasped the cup, lifted and tilted it over the bowl, and poured the contents into the bowl. The cup was then placed back on the table.\n\nScore: 5"
+      },
+      "dense_timeline": [
+        {
+          "start_s": 0.0,
+          "end_s": 3.367,
+          "score": 3
+        },
+        {
+          "start_s": 3.367,
+          "end_s": 3.467,
+          "score": 2
+        },
+        {
+          "start_s": 3.467,
+          "end_s": 3.6,
+          "score": 3
+        },
+        {
+          "start_s": 3.6,
+          "end_s": 3.7,
+          "score": 2
+        },
+        {
+          "start_s": 3.7,
+          "end_s": 3.833,
+          "score": 3
+        },
+        {
+          "start_s": 3.833,
+          "end_s": 6.833,
+          "score": 2
+        },
+        {
+          "start_s": 6.833,
+          "end_s": 6.967,
+          "score": 3
+        },
+        {
+          "start_s": 6.967,
+          "end_s": 7.1,
+          "score": 2
+        },
+        {
+          "start_s": 7.1,
+          "end_s": 7.2,
+          "score": 3
+        },
+        {
+          "start_s": 7.2,
+          "end_s": 7.367,
+          "score": 2
+        },
+        {
+          "start_s": 7.367,
+          "end_s": 7.467,
+          "score": 3
+        },
+        {
+          "start_s": 7.467,
+          "end_s": 7.6,
+          "score": 2
+        },
+        {
+          "start_s": 7.6,
+          "end_s": 7.7,
+          "score": 3
+        },
+        {
+          "start_s": 7.7,
+          "end_s": 7.833,
+          "score": 2
+        },
+        {
+          "start_s": 7.833,
+          "end_s": 13.167,
+          "score": 3
+        }
+      ],
+      "dense_summary": {
+        "invalid_clips": 0,
+        "worst_score": 2,
+        "mean_score": 2.7139
+      },
+      "raw_sha256": {
+        "caption": "96fdeca5fbac0422fd5a5515982cfcf291b92742b8b94170644671d1ab79ddda",
+        "outcome": "f6c1f52991931b70fd325e36944ee8b5c6d3ad2082c586a893a292b80a86982e",
+        "dense": "1220d9f875d3ab861869b756e4de76a87fcdeaa0cd03bb3eb0278a9df32f5057"
+      },
+      "imported_result_sha256": "92b14788982bb7ac33d1f3a0c973500a6ff84d24abe89118f7cb5dfdb32b0332"
+    },
+    {
+      "id": "homer_33",
+      "video_sha256": [
+        "c27a72aa1f474e19ef4e738453bf75ef53604969e2dcaeea0af5d106810a2690"
+      ],
+      "events": [
+        {
+          "start_s": 0.75,
+          "end_s": 3.25
+        },
+        {
+          "start_s": 4.25,
+          "end_s": 12.5
+        },
+        {
+          "start_s": 12.75,
+          "end_s": 41.5
+        },
+        {
+          "start_s": 42.0,
+          "end_s": 48.5
+        },
+        {
+          "start_s": 48.5,
+          "end_s": 62.5
+        },
+        {
+          "start_s": 63.0,
+          "end_s": 72.1
+        }
+      ],
+      "events_sha256": "db66aeb4237345767b0cde8fb9fddd183ff398e552742b53955d8b12eb264d74",
+      "task": "dice an onion with a nice",
+      "profile": "human",
+      "duration_s": 72.23333333333333,
+      "captions": [
+        {
+          "start_s": 0.75,
+          "end_s": 3.25,
+          "label": "pick up knife with right hand"
+        },
+        {
+          "start_s": 4.25,
+          "end_s": 12.5,
+          "label": "pick up onion with left hand, cut onion with knife in right hand, place onion on counter with right hand"
+        },
+        {
+          "start_s": 12.75,
+          "end_s": 41.5,
+          "label": "hold onion with left hand, peel onion with knife in right hand"
+        },
+        {
+          "start_s": 42.0,
+          "end_s": 48.5,
+          "label": "hold onion with left hand, cut onion with knife in right hand, separate onion with both hands"
+        },
+        {
+          "start_s": 48.5,
+          "end_s": 62.5,
+          "label": "hold onion with left hand, place onion on cutting board with right hand, slice onion with knife in right hand"
+        },
+        {
+          "start_s": 63.0,
+          "end_s": 72.1,
+          "label": "slice the left half of the onion diagonally on the chopping board using the knife with the right hand while holding the left half of the onion with the left hand, rotate the left half of the onion counterclockwise on the chopping board with the left hand while holding the knife with the right hand, and slice the left half of the onion vertically on the chopping board using the knife with the right hand while holding the left half of the onion with the left hand"
+        }
+      ],
+      "outcome_reward": {
+        "id": "homer_33",
+        "task": "dice an onion with a nice",
+        "score": 3,
+        "expected_score": 3.1244,
+        "progress": 0.5311,
+        "probabilities": {
+          "1": 0.0001,
+          "2": 0.0074,
+          "3": 0.8605,
+          "4": 0.132,
+          "5": 0.0
+        },
+        "rationale": "The robot peeled and sliced the onion into smaller pieces, but did not complete a full dice. The final state shows sliced or partially cut pieces rather than a fully diced onion.",
+        "duration_s": 72.233,
+        "sampled_frames": 64,
+        "output": "Rationale: The robot peeled and sliced the onion into smaller pieces, but did not complete a full dice. The final state shows sliced or partially cut pieces rather than a fully diced onion.\n\nScore: 3"
+      },
+      "dense_timeline": [
+        {
+          "start_s": 0.0,
+          "end_s": 9.9,
+          "score": 3
+        },
+        {
+          "start_s": 9.9,
+          "end_s": 29.9,
+          "score": 2
+        },
+        {
+          "start_s": 29.9,
+          "end_s": 48.9,
+          "score": 3
+        },
+        {
+          "start_s": 48.9,
+          "end_s": 49.9,
+          "score": 1
+        },
+        {
+          "start_s": 49.9,
+          "end_s": 72.233,
+          "score": 2
+        }
+      ],
+      "dense_summary": {
+        "invalid_clips": 0,
+        "worst_score": 1,
+        "mean_score": 2.3862
+      },
+      "raw_sha256": {
+        "caption": "bc3ef8247ced2577ba7757adc8cd18313c63d67e80d5900f7fa8c8ca482fd685",
+        "outcome": "f6c1f52991931b70fd325e36944ee8b5c6d3ad2082c586a893a292b80a86982e",
+        "dense": "1220d9f875d3ab861869b756e4de76a87fcdeaa0cd03bb3eb0278a9df32f5057"
+      },
+      "imported_result_sha256": "84d3aeb8abeedd4ac9e35eb44221489f480e01047bcf67090c67ae414e5e648e",
+      "native_caption_baseline": [
+        {
+          "start_s": 0.75,
+          "end_s": 3.25,
+          "caption": "pick up knife with right hand",
+          "status": "complete"
+        },
+        {
+          "start_s": 4.25,
+          "end_s": 12.5,
+          "caption": "pick up onion with left hand, cut onion with knife in right hand, place onion on counter with right hand",
+          "status": "complete"
+        },
+        {
+          "start_s": 12.75,
+          "end_s": 41.5,
+          "caption": "hold onion with left hand, peel onion with knife in right hand",
+          "status": "complete"
+        },
+        {
+          "start_s": 42.0,
+          "end_s": 48.5,
+          "caption": "hold onion with left hand, cut onion with knife in right hand, separate onion with both hands",
+          "status": "complete"
+        },
+        {
+          "start_s": 48.5,
+          "end_s": 62.5,
+          "caption": "hold onion with left hand, place onion on cutting board with right hand, slice onion with knife in right hand",
+          "status": "complete"
+        },
+        {
+          "start_s": 63.0,
+          "end_s": 72.1,
+          "caption": "slice the left half of the onion diagonally using the knife with the right hand, rotate the left half of the onion counterclockwise on the chopping board with the left hand, and slice the left half of the onion diagonally using the knife with the right hand",
+          "status": "complete"
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "caption-seq1-v3",
+      "status": "complete",
+      "stage": "caption",
+      "max_num_seqs": 1,
+      "episodes": [
+        "robointer_droid_000013",
+        "galaxea_049",
+        "homer_33"
+      ],
+      "supplied_intervals": 8,
+      "cohort_sha256": "9decc0e9137f414952d0067ba8a2b949682c0dcf3d585369f97c648b05a52ddf",
+      "worker_elapsed_s": 444.33676290512085,
+      "gpu_cost_estimate_usd": 0.5603086580233574,
+      "compute_cost_upper_estimate_usd": 0.6700065180493736,
+      "phases": {
+        "observed_monitor_to_first_generation_s": 424.0371141433716,
+        "prepare_wall_s": 159.016088469,
+        "engine_load_wall_s": 229.31276250899998,
+        "processor_parity_wall_s": 32.051879445,
+        "vllm_weight_loading_s": 59.577906,
+        "vllm_engine_init_profile_kv_warmup_s": 118.22,
+        "vllm_compilation_in_engine_init_s": 26.69,
+        "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+      },
+      "inference": {
+        "scopes": [
+          "vllm_generate_excluding_journal"
+        ],
+        "seconds": 9.84215014800003,
+        "requests": 8,
+        "output_tokens": 226,
+        "requests_per_second": 0.8128305176918721,
+        "output_tokens_per_second": 22.962462124795387,
+        "gpu": {
+          "samples": 9,
+          "gpu_util_percent": {
+            "mean": 88.66666666666667,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 34.888888888888886,
+            "p50": 32.0,
+            "p95": 66.99999999999997,
+            "max": 89.0
+          },
+          "memory_used_mib": {
+            "mean": 125803.44444444444,
+            "p50": 126301.0,
+            "p95": 126301.0,
+            "max": 126301.0
+          },
+          "power_w": {
+            "mean": 568.2733333333333,
+            "p50": 650.79,
+            "p95": 675.866,
+            "max": 681.27
+          }
+        }
+      },
+      "whole_worker_gpu": {
+        "samples": 442,
+        "gpu_util_percent": {
+          "mean": 4.287330316742081,
+          "p50": 0.0,
+          "p95": 4.0,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 2.0429864253393664,
+          "p50": 0.0,
+          "p95": 0.0,
+          "max": 91.0
+        },
+        "memory_used_mib": {
+          "mean": 36226.16742081448,
+          "p50": 53495.0,
+          "p95": 123489.0,
+          "max": 128155.0
+        },
+        "power_w": {
+          "mean": 117.90201357466064,
+          "p50": 119.38499999999999,
+          "p95": 127.755,
+          "max": 681.27
+        }
+      },
+      "warnings": []
+    },
+    {
+      "run_id": "caption-seq8-v3",
+      "status": "complete",
+      "stage": "caption",
+      "max_num_seqs": 8,
+      "episodes": [
+        "robointer_droid_000013",
+        "galaxea_049",
+        "homer_33"
+      ],
+      "supplied_intervals": 8,
+      "cohort_sha256": "9decc0e9137f414952d0067ba8a2b949682c0dcf3d585369f97c648b05a52ddf",
+      "worker_elapsed_s": 427.1093053817749,
+      "gpu_cost_estimate_usd": 0.5385848340864181,
+      "compute_cost_upper_estimate_usd": 0.6440295793990707,
+      "phases": {
+        "observed_monitor_to_first_generation_s": 406.9409384727478,
+        "prepare_wall_s": 144.524608917,
+        "engine_load_wall_s": 236.961465924,
+        "processor_parity_wall_s": 21.878028110000002,
+        "vllm_weight_loading_s": 52.968286,
+        "vllm_engine_init_profile_kv_warmup_s": 144.33,
+        "vllm_compilation_in_engine_init_s": 51.46,
+        "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+      },
+      "inference": {
+        "scopes": [
+          "vllm_generate_excluding_journal"
+        ],
+        "seconds": 9.963709929000004,
+        "requests": 8,
+        "output_tokens": 226,
+        "requests_per_second": 0.8029137798076094,
+        "output_tokens_per_second": 22.682314279564963,
+        "gpu": {
+          "samples": 9,
+          "gpu_util_percent": {
+            "mean": 65.55555555555556,
+            "p50": 100.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 26.444444444444443,
+            "p50": 29.0,
+            "p95": 65.79999999999998,
+            "max": 89.0
+          },
+          "memory_used_mib": {
+            "mean": 127515.66666666667,
+            "p50": 129461.0,
+            "p95": 129461.0,
+            "max": 129461.0
+          },
+          "power_w": {
+            "mean": 475.5466666666667,
+            "p50": 649.69,
+            "p95": 693.818,
+            "max": 694.67
+          }
+        }
+      },
+      "whole_worker_gpu": {
+        "samples": 424,
+        "gpu_util_percent": {
+          "mean": 4.523584905660377,
+          "p50": 0.0,
+          "p95": 13.0,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 2.535377358490566,
+          "p50": 0.0,
+          "p95": 5.0,
+          "max": 95.0
+        },
+        "memory_used_mib": {
+          "mean": 38240.03773584906,
+          "p50": 53727.0,
+          "p95": 123625.0,
+          "max": 129461.0
+        },
+        "power_w": {
+          "mean": 126.75603773584905,
+          "p50": 127.1,
+          "p95": 237.02249999999947,
+          "max": 694.67
+        }
+      },
+      "warnings": []
+    },
+    {
+      "run_id": "native-baseline-v4",
+      "status": "failed",
+      "stage": "caption-native",
+      "max_num_seqs": 1,
+      "episodes": [
+        "homer_33"
+      ],
+      "supplied_intervals": 6,
+      "cohort_sha256": "9b6bc288f595f1aeca5366ba572809c5bf1bc477e2a174876ed0d11b81101ce2",
+      "worker_elapsed_s": 416.646315574646,
+      "gpu_cost_estimate_usd": 0.5253910039396286,
+      "compute_cost_upper_estimate_usd": 0.6282526463286972,
+      "phases": {
+        "native_model_load_including_manifest_s": 218.17867493629456,
+        "native_manifest_verification_s": 161.879,
+        "observed_monitor_to_first_generation_s": 350.4755029678345,
+        "native_ready_to_first_generation_prepare_s": 99.43134903907776,
+        "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+      },
+      "inference": {
+        "scopes": [
+          "native_generate_plus_journal_and_decode"
+        ],
+        "seconds": 43.7,
+        "requests": 6,
+        "output_tokens": 142,
+        "requests_per_second": 0.13729977116704806,
+        "output_tokens_per_second": 3.249427917620137,
+        "gpu": {
+          "samples": 43,
+          "gpu_util_percent": {
+            "mean": 32.76744186046512,
+            "p50": 31.0,
+            "p95": 97.9,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 12.511627906976743,
+            "p50": 14.0,
+            "p95": 33.0,
+            "max": 39.0
+          },
+          "memory_used_mib": {
+            "mean": 61435.83720930233,
+            "p50": 62331.0,
+            "p95": 62337.0,
+            "max": 62337.0
+          },
+          "power_w": {
+            "mean": 257.35441860465113,
+            "p50": 195.9,
+            "p95": 555.689,
+            "max": 576.28
+          }
+        }
+      },
+      "whole_worker_gpu": {
+        "samples": 412,
+        "gpu_util_percent": {
+          "mean": 3.6262135922330097,
+          "p50": 0.0,
+          "p95": 31.0,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 1.3058252427184467,
+          "p50": 0.0,
+          "p95": 14.0,
+          "max": 39.0
+        },
+        "memory_used_mib": {
+          "mean": 30412.364077669903,
+          "p50": 52716.0,
+          "p95": 62331.0,
+          "max": 62337.0
+        },
+        "power_w": {
+          "mean": 114.3569417475728,
+          "p50": 119.61,
+          "p95": 198.36599999999993,
+          "max": 576.28
+        }
+      },
+      "warnings": [
+        "Hosted run did not complete; retained generations are not full-stage acceptance."
+      ]
+    },
+    {
+      "run_id": "reward-dense-seq1-v1",
+      "status": "complete",
+      "stage": "reward-dense",
+      "max_num_seqs": 1,
+      "episodes": [
+        "robointer_droid_000013",
+        "galaxea_049",
+        "homer_33"
+      ],
+      "supplied_intervals": 8,
+      "cohort_sha256": "9decc0e9137f414952d0067ba8a2b949682c0dcf3d585369f97c648b05a52ddf",
+      "worker_elapsed_s": 400.1379129886627,
+      "gpu_cost_estimate_usd": 0.5045739082787036,
+      "compute_cost_upper_estimate_usd": 0.6033599562373447,
+      "phases": {
+        "observed_monitor_to_first_generation_s": 325.22966957092285,
+        "vllm_weight_loading_s": 48.764573,
+        "vllm_engine_init_profile_kv_warmup_s": 179.3,
+        "vllm_compilation_in_engine_init_s": 56.16,
+        "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+      },
+      "inference": {
+        "scopes": [
+          "vllm_generate_excluding_journal"
+        ],
+        "seconds": 37.902288401999954,
+        "requests": 12,
+        "output_tokens": 820,
+        "requests_per_second": 0.31660357476903184,
+        "output_tokens_per_second": 21.634577609217175,
+        "gpu": {
+          "samples": 37,
+          "gpu_util_percent": {
+            "mean": 41.567567567567565,
+            "p50": 0.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 29.783783783783782,
+            "p50": 0.0,
+            "p95": 91.0,
+            "max": 91.0
+          },
+          "memory_used_mib": {
+            "mean": 124195.86486486487,
+            "p50": 124881.0,
+            "p95": 124881.0,
+            "max": 124881.0
+          },
+          "power_w": {
+            "mean": 272.21135135135137,
+            "p50": 214.06,
+            "p95": 556.762,
+            "max": 563.39
+          }
+        }
+      },
+      "whole_worker_gpu": {
+        "samples": 398,
+        "gpu_util_percent": {
+          "mean": 9.93969849246231,
+          "p50": 0.0,
+          "p95": 99.14999999999998,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 7.50251256281407,
+          "p50": 0.0,
+          "p95": 86.0,
+          "max": 93.0
+        },
+        "memory_used_mib": {
+          "mean": 55341.43216080402,
+          "p50": 57529.0,
+          "p95": 124881.0,
+          "max": 127551.0
+        },
+        "power_w": {
+          "mean": 149.8588944723618,
+          "p50": 125.42,
+          "p95": 414.51749999999953,
+          "max": 563.39
+        }
+      },
+      "warnings": [
+        "Some generation windows have fewer than five 1Hz GPU samples; short-window percentiles are weak evidence."
+      ]
+    },
+    {
+      "run_id": "reward-seq1-v1",
+      "status": "failed",
+      "stage": "reward",
+      "max_num_seqs": 1,
+      "episodes": [
+        "robointer_droid_000013",
+        "galaxea_049",
+        "homer_33"
+      ],
+      "supplied_intervals": 8,
+      "cohort_sha256": "9decc0e9137f414952d0067ba8a2b949682c0dcf3d585369f97c648b05a52ddf",
+      "worker_elapsed_s": 503.88109016418457,
+      "gpu_cost_estimate_usd": 0.6353940546970367,
+      "compute_cost_upper_estimate_usd": 0.7597922182367706,
+      "phases": {
+        "observed_monitor_to_first_generation_s": 443.289035320282,
+        "vllm_weight_loading_s": 50.615664,
+        "vllm_engine_init_profile_kv_warmup_s": 278.67,
+        "vllm_compilation_in_engine_init_s": 100.83,
+        "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+      },
+      "inference": {
+        "scopes": [
+          "vllm_generate_excluding_journal"
+        ],
+        "seconds": 39.87015843900002,
+        "requests": 3,
+        "output_tokens": 119,
+        "requests_per_second": 0.07524424575813757,
+        "output_tokens_per_second": 2.98468841507279,
+        "gpu": {
+          "samples": 41,
+          "gpu_util_percent": {
+            "mean": 7.341463414634147,
+            "p50": 0.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 6.219512195121951,
+            "p50": 0.0,
+            "p95": 80.0,
+            "max": 87.0
+          },
+          "memory_used_mib": {
+            "mean": 123734.9512195122,
+            "p50": 123429.0,
+            "p95": 124887.0,
+            "max": 124887.0
+          },
+          "power_w": {
+            "mean": 152.35658536585365,
+            "p50": 122.46,
+            "p95": 326.34,
+            "max": 565.35
+          }
+        }
+      },
+      "whole_worker_gpu": {
+        "samples": 500,
+        "gpu_util_percent": {
+          "mean": 5.364,
+          "p50": 0.0,
+          "p95": 24.5499999999995,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 3.668,
+          "p50": 0.0,
+          "p95": 15.349999999999682,
+          "max": 93.0
+        },
+        "memory_used_mib": {
+          "mean": 51618.8,
+          "p50": 57531.0,
+          "p95": 123429.0,
+          "max": 128095.0
+        },
+        "power_w": {
+          "mean": 129.82564,
+          "p50": 122.37,
+          "p95": 180.38399999999984,
+          "max": 565.35
+        }
+      },
+      "warnings": [
+        "Hosted run did not complete; retained generations are not full-stage acceptance.",
+        "Some generation windows have fewer than five 1Hz GPU samples; short-window percentiles are weak evidence."
+      ]
+    },
+    {
+      "run_id": "reward-seq8-v1",
+      "status": "complete",
+      "stage": "reward",
+      "max_num_seqs": 8,
+      "episodes": [
+        "robointer_droid_000013",
+        "galaxea_049",
+        "homer_33"
+      ],
+      "supplied_intervals": 8,
+      "cohort_sha256": "9decc0e9137f414952d0067ba8a2b949682c0dcf3d585369f97c648b05a52ddf",
+      "worker_elapsed_s": 427.95754647254944,
+      "gpu_cost_estimate_usd": 0.5396544661018848,
+      "compute_cost_upper_estimate_usd": 0.6453086251750277,
+      "phases": {
+        "observed_monitor_to_first_generation_s": 369.29121446609497,
+        "vllm_weight_loading_s": 31.247057,
+        "vllm_engine_init_profile_kv_warmup_s": 262.58,
+        "vllm_compilation_in_engine_init_s": 161.11,
+        "note": "Cold/load subphases may overlap; do not add them together. Unmeasured prep remains unassigned."
+      },
+      "inference": {
+        "scopes": [
+          "vllm_generate_excluding_journal"
+        ],
+        "seconds": 36.869232891000024,
+        "requests": 15,
+        "output_tokens": 941,
+        "requests_per_second": 0.40684328975180767,
+        "output_tokens_per_second": 25.522635710430066,
+        "gpu": {
+          "samples": 37,
+          "gpu_util_percent": {
+            "mean": 24.324324324324323,
+            "p50": 0.0,
+            "p95": 100.0,
+            "max": 100.0
+          },
+          "memory_util_percent": {
+            "mean": 12.378378378378379,
+            "p50": 0.0,
+            "p95": 87.19999999999999,
+            "max": 88.0
+          },
+          "memory_used_mib": {
+            "mean": 125400.83783783784,
+            "p50": 123653.0,
+            "p95": 128737.4,
+            "max": 128739.0
+          },
+          "power_w": {
+            "mean": 235.4708108108108,
+            "p50": 121.52,
+            "p95": 691.76,
+            "max": 699.28
+          }
+        }
+      },
+      "whole_worker_gpu": {
+        "samples": 426,
+        "gpu_util_percent": {
+          "mean": 4.802816901408451,
+          "p50": 0.0,
+          "p95": 13.25,
+          "max": 100.0
+        },
+        "memory_util_percent": {
+          "mean": 2.788732394366197,
+          "p50": 0.0,
+          "p95": 5.0,
+          "max": 90.0
+        },
+        "memory_used_mib": {
+          "mean": 57103.657276995305,
+          "p50": 57525.0,
+          "p95": 127923.0,
+          "max": 128739.0
+        },
+        "power_w": {
+          "mean": 136.5649530516432,
+          "p50": 121.32,
+          "p95": 296.515,
+          "max": 699.28
+        }
+      },
+      "warnings": [
+        "Some generation windows have fewer than five 1Hz GPU samples; short-window percentiles are weak evidence."
+      ]
+    }
+  ],
+  "offline_checks": {
+    "passed": 2393,
+    "skipped": 1,
+    "seconds": 399.15
+  },
+  "astra_comparison": "No matching native-video and Argus caption-interval bundle was found for the existing Astra QC records."
+}
