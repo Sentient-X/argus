@@ -281,13 +281,22 @@ def _worker(root: Path) -> None:
                                         EVIDENCE_ROOT / "prepared")
         try:
             with prefetch:
-                for index, results in enumerate(caption_stream(chunks, session)):
-                    chunk = chunks[index]
-                    for request, result in zip(chunk.requests, results, strict=True):
-                        validate("caption", result, request)
-                    save(chunk.output_dir.parent / "complete.json",
-                         {"batch_index": index, "episodes": len(results)}, commit)
-                    prefetch.completed(index)
+                # Transfer at most two caches to local disk before handing them
+                # to the native loader. Its hash checks and RAM copies then read
+                # local bytes, rather than racing the warmer on the remote volume.
+                # Pairs preserve native lookahead without changing its cache-code
+                # identity; the same resident engine survives every pair.
+                for start in range(0, len(chunks), 2):
+                    pair = [CaptionChunk(chunk.requests, chunk.output_dir, chunk.journal,
+                                         prefetch.wait_cache(index))
+                            for index, chunk in enumerate(chunks[start:start + 2], start)]
+                    for index, results in enumerate(caption_stream(pair, session), start):
+                        chunk = chunks[index]
+                        for request, result in zip(chunk.requests, results, strict=True):
+                            validate("caption", result, request)
+                        save(chunk.output_dir.parent / "complete.json",
+                             {"batch_index": index, "episodes": len(results)}, commit)
+                        prefetch.completed(index)
         finally:
             save(root / "cache-prefetch.json", prefetch.snapshot(), commit)
     else:

@@ -1,6 +1,6 @@
-"""Bounded, read-only warming of admitted Flora caches on remote volumes.
+"""Bounded local staging of admitted Flora caches from remote volumes.
 
-Four readers overlap object fetch latency. This is never admission: the normal
+Four readers copy and verify each remote array once. This is never admission: the normal
 loader still verifies every byte, checkpoint and native processor certificate.
 A failed future cache is recorded without interrupting a paid current batch.
 """
@@ -14,6 +14,8 @@ from pathlib import Path
 import queue
 import re
 import stat
+import shutil
+import tempfile
 import threading
 import time
 
@@ -28,6 +30,7 @@ class _Read:
     path: Path
     sha256: str
     size: int
+    destination: Path | None = None
 
 
 def _cache_files(descriptor: dict, allowed_root: Path, index: int) -> list[_Read]:
@@ -64,7 +67,9 @@ def _verify_file(item: _Read, cancelled: threading.Event) -> bool:
     if cancelled.is_set():
         return False
     descriptor = os.open(item.path, os.O_RDONLY | os.O_NOFOLLOW)
-    with os.fdopen(descriptor, "rb") as source:
+    from contextlib import nullcontext
+    pending = item.destination.with_suffix(".partial") if item.destination is not None else None
+    with os.fdopen(descriptor, "rb") as source, (pending.open("xb") if pending else nullcontext()) as output:
         stamp = os.fstat(source.fileno())
         if not stat.S_ISREG(stamp.st_mode) or stamp.st_size != item.size:
             raise ValueError("Prefetch array changed before reading")
@@ -74,16 +79,26 @@ def _verify_file(item: _Read, cancelled: threading.Event) -> bool:
             if not block:
                 if count != item.size or digest.hexdigest() != item.sha256:
                     raise ValueError("Prefetch array SHA differs from admitted evidence")
+                if output is not None:
+                    output.flush()
+                    output.close()
+                    pending.replace(item.destination)
                 return True
             count += len(block)
             if count > item.size:
                 raise ValueError("Prefetch array changed while reading")
             digest.update(block)
+            if output is not None:
+                output.write(block)
     return False
 
 
 class CaptionCachePrefetch:
-    """Warm current + successor only; advance after the caller commits a batch."""
+    """Stage current + successor only; advance after the caller commits a batch.
+
+    The scratch directory is container-local, never the remote evidence volume.
+    wait_cache() is the handoff: consumers cannot read an incomplete local copy.
+    """
 
     def __init__(self, descriptors: list[dict], allowed_root: Path):
         if not 1 <= len(descriptors) <= 32:
@@ -98,6 +113,7 @@ class CaptionCachePrefetch:
         self._states = [{"batch_index": i, "status": "pending", "verified_files": 0,
                          "verified_bytes": 0, "error": None} for i in range(len(descriptors))]
         self._remaining = [0 for _ in descriptors]
+        self._scratch = Path(tempfile.mkdtemp(prefix="flora-input-"))
 
     def __enter__(self):
         if self._threads:
@@ -109,16 +125,35 @@ class CaptionCachePrefetch:
             thread.start()
         return self
 
+    def wait_cache(self, index: int) -> Path:
+        if not 0 <= index < len(self._descriptors):
+            raise ValueError("Invalid cache index")
+        while not self._finished[index].wait(0.1):
+            if self._cancelled.is_set():
+                raise RuntimeError("Cache staging cancelled")
+        with self._condition:
+            state = self._states[index]
+            if state["status"] != "complete":
+                raise ValueError(f"Cache staging failed: {state['error']}")
+        return self._scratch / str(index)
+
     def completed(self, index: int) -> None:
         with self._condition:
             if index != self._current or index >= len(self._descriptors):
                 raise ValueError("Prefetch advancement must follow committed batch order")
+            if not self._finished[index].is_set():
+                raise ValueError("Cannot release a cache still being staged")
+            try:
+                shutil.rmtree(self._scratch / str(index))
+            except OSError as error:
+                self._states[index]["cleanup_error"] = str(error)
+                raise
             self._current += 1
             self._condition.notify_all()
 
     def snapshot(self) -> dict:
         with self._condition:
-            return {"streaming_readers": 4, "maximum_caches_ahead": 2,
+            return {"storage": "container-local", "streaming_readers": 4, "maximum_caches_ahead": 2,
                     "batches": [dict(state) for state in self._states]}
 
     def _coordinate(self):
@@ -130,6 +165,16 @@ class CaptionCachePrefetch:
             started = time.monotonic()
             try:
                 items = _cache_files(descriptor, self._allowed_root, index)
+                directory = self._scratch / str(index)
+                directory.mkdir()
+                with Path(descriptor["path"]).open("rb") as source:
+                    manifest_bytes = source.read(MAX_MANIFEST_BYTES + 1)
+                if (len(manifest_bytes) > MAX_MANIFEST_BYTES
+                        or hashlib.sha256(manifest_bytes).hexdigest() != descriptor["sha256"]):
+                    raise ValueError("Prefetch manifest changed before staging")
+                (directory / "cache.json").write_bytes(manifest_bytes)
+                items = [_Read(item.batch, item.path, item.sha256, item.size,
+                               directory / item.path.name) for item in items]
                 with self._condition:
                     if self._cancelled.is_set():
                         return
@@ -150,6 +195,7 @@ class CaptionCachePrefetch:
             except Exception as error:
                 with self._condition:
                     self._states[index].update(status="failed", error=str(error))
+                    self._finished[index].set()
             finally:
                 with self._condition:
                     self._states[index]["elapsed_s"] = time.monotonic() - started
@@ -187,9 +233,21 @@ class CaptionCachePrefetch:
             for state in self._states:
                 if state["status"] in {"pending", "warming"}:
                     state["status"] = "cancelled"
-        # Storage reads can block in the filesystem. Daemon readers own no GPU,
-        # writes or model calls; cancellation stops them between bounded reads.
+        # Storage reads can block in the filesystem. Daemon readers own no GPU
+        # or model calls; cancellation stops them between bounded reads.
         # Never hold a completed batch hostage to a stalled future cache fetch.
         deadline = time.monotonic() + 0.5
         for thread in self._threads:
             thread.join(timeout=max(0, deadline - time.monotonic()))
+
+        # Only our temporary copy is removed, after every writer has closed it.
+        # A blocked remote read must not delay durable output finalization.
+        def cleanup():
+            for thread in self._threads:
+                thread.join()
+            shutil.rmtree(self._scratch, ignore_errors=True)
+
+        if any(thread.is_alive() for thread in self._threads):
+            threading.Thread(target=cleanup, name="flora-input-cleanup", daemon=True).start()
+        else:
+            shutil.rmtree(self._scratch, ignore_errors=True)
